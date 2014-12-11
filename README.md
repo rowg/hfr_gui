@@ -1,4 +1,4 @@
 hfr_gui
 =======
 
-Easy visualization of HFR data using Graphical User Interfaces built by Teresa Garner
+Processing and visualization of HFR data using Graphical User Interfaces and HFR Progs, built by Teresa Garner Updyke
