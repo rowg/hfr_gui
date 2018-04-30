@@ -90,9 +90,11 @@ P_ = eye(2)*mdlvar;
 [ang1, ang2] = meshgrid(angle, angle);
 [drx_, dry_] = lonlat2km(x1, y1, x2, y2); 
 
-if option == 1,
-	cmd = exp(-sqrt(dx.^2/sx^2 + dy.^2/sy^2));
-	w_ = exp(-sqrt(drx_.^2/sx^2 + dry_.^2/sy^2))*mdlvar;
+if option == 1,  % correction comes from Hugh's correspondence with Kim in July 8-13 2011 (Subject "Question on 2008 OI paper")
+	%cmd = exp(-sqrt(dx.^2/sx^2 + dy.^2/sy^2)); 
+	%w_ = exp(-sqrt(drx_.^2/sx^2 + dry_.^2/sy^2))*mdlvar;
+    cmd = exp(-(dx.^2/sx^2 + dy.^2/sy^2));
+    w_ = exp(-(drx_.^2/sx^2 + dry_.^2/sy^2))*mdlvar;
 end
 
 if option == 2,

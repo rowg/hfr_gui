@@ -69,12 +69,12 @@ cc = [];
 %     0.870588235294118   0.490196078431373                   0;... gold
 %     0.168627450980392   0.505882352941176   0.337254901960784];  %medium green
 mycolors = [[27,158,119]./255;  % based on ColorBrewer (http://colorbrewer2.org)
-[117,112,179]./255;
-[231,41,138]./255;
-[102,166,30]./255;
-[230,171,2]./255;
-[166,118,29]./255;
-[102,102,102]./255;];
+    [117,112,179]./255;
+    [231,41,138]./255;
+    [102,166,30]./255;
+    [230,171,2]./255;
+    [166,118,29]./255;
+    [102,102,102]./255;];
 
 mycolors = repmat(mycolors,10,1);
 
@@ -385,7 +385,7 @@ clearbutton_Callback;
             disp('Contacting Thredds server.  Please wait - the data may take up to 60 seconds to load.');
             threddsbutton_Callback;
             
-     
+            
             
         else
             
@@ -455,7 +455,7 @@ clearbutton_Callback;
                         disp(['Loading...',myfilename])
                         eval(['cd ''',cdir,''''])
                         % GET TOTALS FILE NAME FROM DEFAULT SETTINGS
-                    else                        
+                    else
                         myfilename = getfilename();
                         disp(['Loading...',myfilename])
                     end
@@ -464,9 +464,9 @@ clearbutton_Callback;
                     try
                         DATA = load(myfilename);
                         if isfield(DATA,'RTUV')
-                              RDATA = DATA.RTUV;
+                            RDATA = DATA.RTUV;
                         end
-                        DATA = DATA.TUV;                            
+                        DATA = DATA.TUV;
                     catch
                         msgbox(sprintf('Error: File not found.\n%s',myfilename));
                     end
@@ -531,12 +531,12 @@ clearbutton_Callback;
                     end
                     
                     try
-                      Uerr = DATA.ErrorEstimates.Uerr;
-                      Verr = DATA.ErrorEstimates.Verr;
-                      ikeep = find(Uerr <= oival & Verr <= oival);
-                      DATA = subsrefTUV( DATA, ikeep, ':', 0, 0 );
+                        Uerr = DATA.ErrorEstimates.Uerr;
+                        Verr = DATA.ErrorEstimates.Verr;
+                        ikeep = find(Uerr <= oival & Verr <= oival);
+                        DATA = subsrefTUV( DATA, ikeep, ':', 0, 0 );
                     catch
-                      disp('Did not find OI error estimates.  No OI mask applied.')
+                        disp('Did not find OI error estimates.  No OI mask applied.')
                     end
                 end
                 
@@ -582,18 +582,18 @@ clearbutton_Callback;
                 
                 % draw markers for radial site locations if radial data is
                 % included in the total file
-                        if exist('RDATA', 'var')
-                            for jj = 1:size(RDATA,1)
-                                if ~isempty(RDATA(jj).U)
-                                  if strcmp(RDATA(jj).Type,'RDLMeasured')
-                                    m_plot(RDATA(jj).SiteOrigin(:,1),RDATA(jj).SiteOrigin(:,2),'Marker','^','MarkerFaceColor','g','MarkerSize',16);
-                                  elseif strcmp(RDATA(jj).Type,'RDLIdeal')
-                                    m_plot(RDATA(jj).SiteOrigin(:,1),RDATA(jj).SiteOrigin(:,2),'Marker','s','MarkerFaceColor','r','MarkerSize',16);
-                                  end
-                                end
+                if exist('RDATA', 'var')
+                    for jj = 1:size(RDATA,1)
+                        if ~isempty(RDATA(jj).U)
+                            if strcmp(RDATA(jj).Type,'RDLMeasured')
+                                m_plot(RDATA(jj).SiteOrigin(:,1),RDATA(jj).SiteOrigin(:,2),'Marker','^','MarkerFaceColor','g','MarkerSize',16);
+                            elseif strcmp(RDATA(jj).Type,'RDLIdeal')
+                                m_plot(RDATA(jj).SiteOrigin(:,1),RDATA(jj).SiteOrigin(:,2),'Marker','s','MarkerFaceColor','r','MarkerSize',16);
                             end
                         end
-
+                    end
+                end
+                
                 
                 
                 %USE QUIVER ARROWS
@@ -772,7 +772,12 @@ clearbutton_Callback;
         catch
             msgbox('Warning: Define custom zoom under "Extras" menu.');
         end
-        plotBasemap([AA.HFR_GRIDS(gridval).limits(1,1) AA.HFR_GRIDS(gridval).limits(1,2)],[AA.HFR_GRIDS(gridval).limits(1,3) AA.HFR_GRIDS(gridval).limits(1,4)],['''',AA.HFR_PATHS.gui_dir,'GridFiles/map_',sgrid,'.mat'''],'lambert','patch',[0.8 0.8 0.8])
+        
+        try  %added this because quotes handled differently on different systems
+            plotBasemap([AA.HFR_GRIDS(gridval).limits(1,1) AA.HFR_GRIDS(gridval).limits(1,2)],[AA.HFR_GRIDS(gridval).limits(1,3) AA.HFR_GRIDS(gridval).limits(1,4)],['''',AA.HFR_PATHS.gui_dir,'GridFiles/map_',sgrid,'.mat'''],'lambert','patch',[0.8 0.8 0.8])
+        catch
+            plotBasemap([AA.HFR_GRIDS(gridval).limits(1,1) AA.HFR_GRIDS(gridval).limits(1,2)],[AA.HFR_GRIDS(gridval).limits(1,3) AA.HFR_GRIDS(gridval).limits(1,4)],[AA.HFR_PATHS.gui_dir,'GridFiles/map_',sgrid,'.mat'],'lambert','patch',[0.8 0.8 0.8])
+        end
         %plotBasemap([xmin-padx xmax+padx],[ymin-pady ymax+pady],['''',AA.HFR_PATHS.gui_dir,'GridFiles/map_',sgrid,'.mat'''],'lambert','patch',[0.8 0.8 0.8])
         hold on
     end
@@ -978,7 +983,7 @@ clearbutton_Callback;
         
         if isfield(newTUV, 'RTUV')
             for jj = 1:size(newTUV.RTUV,1)  %sort by latitude so neighbors don't have matching colors
-             sitelats(jj) = newTUV.RTUV(jj).SiteOrigin(:,2);
+                sitelats(jj) = newTUV.RTUV(jj).SiteOrigin(:,2);
             end
             [~,locsort] = sort(sitelats);
             newTUV.RTUV = newTUV.RTUV(locsort);
@@ -990,69 +995,69 @@ clearbutton_Callback;
         end
         
         
-         if isfield(newTUV.TUV,'ErrorEstimates')
-                    try
-                        GDOP = newTUV.TUV.ErrorEstimates(2).TotalErrors;
-                        ikeep = find(GDOP <= gdopval);
-                        T = subsrefTUV( newTUV.TUV, ikeep, ':', 0, 0 );
-                    catch
-                        disp('Did not find UWLSQ error estimates.  No GDOP mask applied.')
-                    end
-                    
-                    try
-                      Uerr = newTUV.TUV.ErrorEstimates.Uerr;
-                      Verr = newTUV.TUV.ErrorEstimates.Verr;
-                      ikeep = find(Uerr <= oival & Verr <= oival);
-                      T = subsrefTUV( newTUV.TUV, ikeep, ':', 0, 0 );
-                    catch
-                      disp('Did not find OI error estimates.  No OI mask applied.')
-                    end
-                end
+        if isfield(newTUV.TUV,'ErrorEstimates')
+            try
+                GDOP = newTUV.TUV.ErrorEstimates(2).TotalErrors;
+                ikeep = find(GDOP <= gdopval);
+                T = subsrefTUV( newTUV.TUV, ikeep, ':', 0, 0 );
+            catch
+                disp('Did not find UWLSQ error estimates.  No GDOP mask applied.')
+            end
+            
+            try
+                Uerr = newTUV.TUV.ErrorEstimates.Uerr;
+                Verr = newTUV.TUV.ErrorEstimates.Verr;
+                ikeep = find(Uerr <= oival & Verr <= oival);
+                T = subsrefTUV( newTUV.TUV, ikeep, ':', 0, 0 );
+            catch
+                disp('Did not find OI error estimates.  No OI mask applied.')
+            end
+        end
         
         
-%         GDOP = newTUV.TUV.ErrorEstimates(2).TotalErrors;
-%         ikeep = find(GDOP <= gdopval); %effectively does the masking
-%         T = subsrefTUV( newTUV.TUV, ikeep, ':', 0, 0 );
+        %         GDOP = newTUV.TUV.ErrorEstimates(2).TotalErrors;
+        %         ikeep = find(GDOP <= gdopval); %effectively does the masking
+        %         T = subsrefTUV( newTUV.TUV, ikeep, ':', 0, 0 );
         
         %plothandles(pcount) = m_quiver(T.LonLat(:,1), T.LonLat(:,2), T.U(:).*scq,T.V(:).*scq,0);
         %set(plothandles(pcount),'Color','k')
         % use MVEC arrows instead
         % make all vectors the same size
-clear tspd tdir Usc Vsc
-%do not plot vectors outside the map area
-xl = get(gca,'XLim');
-yl = get(gca,'YLim');
-[minlon,minlat] = m_xy2ll(xl(1),yl(1));
-[maxlon,maxlat] = m_xy2ll(xl(2),yl(2));
-%imap = find(T.LonLat(:,1)>minlon & T.LonLat(:,1)<maxlon & T.LonLat(:,2)>minlat & T.LonLat(:,2)<maxlat);
-
-
-
-imap = find(T.LonLat(:,1)>AA.HFR_GRIDS(gridval).limits(1,1) & T.LonLat(:,1)<AA.HFR_GRIDS(gridval).limits(1,2) & T.LonLat(:,2)>AA.HFR_GRIDS(gridval).limits(1,3) & T.LonLat(:,2)<AA.HFR_GRIDS(gridval).limits(1,4));
-[spd,direc] = uv2spdir(T.U(imap),T.V(imap));
-[~,isort] = sort(spd);
-scs = zeros(length(spd),1) + sc;
-[Usc, Vsc] =  spddir2uv(scs, direc(isort));
-
-
-edges = 1:1:maxcolor;  %cm/s
-cmap = colormap(jet(length(edges)+1));
-
-
-edges = [-inf edges inf];                     % speeds under/over a min/max value will be drawn with same color as the min/max value
-[~,BIN] = histc(spd(isort),edges);
-for ii = 1:length(BIN)
-    try
-        cvals(ii,:) = cmap(BIN(ii),:);
-    catch
-        cvals(ii,:) = [1 1 1];  % white for bins with no values
-    end
-end
-
-aa = 1:length(BIN);
-plothandles = m_vec(1,T.LonLat(imap(isort(aa)),1), T.LonLat(imap(isort(aa)),2), Usc(aa),Vsc(aa),cvals(aa,:),'headlength',4);
-hold on
-plotcolorbar(cmap,edges);
+        clear tspd tdir Usc Vsc
+        %do not plot vectors outside the map area
+        xl = get(gca,'XLim');
+        yl = get(gca,'YLim');
+        [minlon,minlat] = m_xy2ll(xl(1),yl(1));
+        [maxlon,maxlat] = m_xy2ll(xl(2),yl(2));
+        %imap = find(T.LonLat(:,1)>minlon & T.LonLat(:,1)<maxlon & T.LonLat(:,2)>minlat & T.LonLat(:,2)<maxlat);
+        
+        
+        
+        imap = find(T.LonLat(:,1)>AA.HFR_GRIDS(gridval).limits(1,1) & T.LonLat(:,1)<AA.HFR_GRIDS(gridval).limits(1,2) & T.LonLat(:,2)>AA.HFR_GRIDS(gridval).limits(1,3) & T.LonLat(:,2)<AA.HFR_GRIDS(gridval).limits(1,4));
+        [spd,direc] = uv2spdir(T.U(imap),T.V(imap));
+        [~,isort] = sort(spd);
+        scs = zeros(length(spd),1) + sc;
+        [Usc, Vsc] =  spddir2uv(scs, direc(isort));
+        
+        
+        edges = 1:1:maxcolor;  %cm/s
+        cmap = colormap(jet(length(edges)+1));
+        
+        
+        edges = [-inf edges inf];                     % speeds under/over a min/max value will be drawn with same color as the min/max value
+        [~,BIN] = histc(spd(isort),edges);
+        for ii = 1:length(BIN)
+            try
+                cvals(ii,:) = cmap(BIN(ii),:);
+            catch
+                cvals(ii,:) = [1 1 1];  % white for bins with no values
+            end
+        end
+        
+        aa = 1:length(BIN);
+        plothandles = m_vec(1,T.LonLat(imap(isort(aa)),1), T.LonLat(imap(isort(aa)),2), Usc(aa),Vsc(aa),cvals(aa,:),'headlength',4);
+        hold on
+        plotcolorbar(cmap,edges);
         
         
         
@@ -1069,54 +1074,54 @@ plotcolorbar(cmap,edges);
         title([titlelab{pcount},' '],'interpreter','none','Color','k','FontSize',12);
         
         if 0
-        %spawn a different figure to select total vector of interest
-        figure(20)
-        HTI = quiver(T.LonLat(:,1), T.LonLat(:,2), T.U(:).*scq,T.V(:).*scq,0);
-        set(HTI,'Color','r')
-        
-        title([titlelab{pcount},' '],'interpreter','none');
-        
-        
-        [~] = input('Zoom in and press enter to select total.');
-        [gx,gy] = ginput(1);
-        %if AA.HFR_GRIDS(gridval).spacing == 2;
-        %   search_radius = 2.5;
-        %elseif AA.HFR_GRIDS(gridval).spacing == 6;
-        %   search_radius = 10;
-        %else
-        search_radius = inputdlg('Enter Search Radius (km) : ','');
-        search_radius = str2double(char(search_radius));
-        %end
-        
-        %grid = [AA.HFR_GRIDS(gridval).lonlat(:,1) AA.HFR_GRIDS(gridval).lonlat(:,2)];
-        
-        temp_threshold = 0.5/24; %time window in fraction of day,i.e. how many hourly radial maps are included in total
-        MINRadials = 3;
-        MINSites = 2;
-        disp('')
-        disp(['Search Radius:',num2str(search_radius),' km'])
-        disp(['MINRadials: ',num2str(MINRadials)])
-        disp(['MINSites: ',num2str(MINSites)])
-        disp(['Time Window: ',num2str(temp_threshold),' day fraction'])
-        
-        
-        % makeTotals will only run for the gridpoint that was selected
-        DD = latlondist(newTUV.TUV.LonLat(:,2),newTUV.TUV.LonLat(:,1),gy,gx);
-        [~, mind] = min(abs(DD));
-        grid = [newTUV.TUV.LonLat(mind,2),newTUV.TUV.LonLat(mind,1)];
-        fprintf('Computing totals\n');
-        if isfield(newTUV, 'RTUV')
-            makeTotals_checktotal(newTUV.RTUV,'Grid',grid,'TimeStamp',newTUV.RTUV(1).TimeStamp, ...
-                'spatthresh',search_radius,'tempthresh',temp_threshold, ...
-                'CreationInfo','Teresa Updyke - ODU', ...
-                'DomainName','','MinNumSites',MINSites,'MinNumRads',MINRadials,'graphics',1,'gridind',mind);
-        end
-        if isfield(newTUV, 'RADS')
-            makeTotals_checktotal(newTUV.RADS,'Grid',grid,'TimeStamp',newTUV.RADS(1).TimeStamp, ...
-                'spatthresh',search_radius,'tempthresh',temp_threshold, ...
-                'CreationInfo','Teresa Updyke - ODU', ...
-                'DomainName','','MinNumSites',MINSites,'MinNumRads',MINRadials,'graphics',1,'gridind',mind);
-        end
+            %spawn a different figure to select total vector of interest
+            figure(20)
+            HTI = quiver(T.LonLat(:,1), T.LonLat(:,2), T.U(:).*scq,T.V(:).*scq,0);
+            set(HTI,'Color','r')
+            
+            title([titlelab{pcount},' '],'interpreter','none');
+            
+            
+            [~] = input('Zoom in and press enter to select total.');
+            [gx,gy] = ginput(1);
+            %if AA.HFR_GRIDS(gridval).spacing == 2;
+            %   search_radius = 2.5;
+            %elseif AA.HFR_GRIDS(gridval).spacing == 6;
+            %   search_radius = 10;
+            %else
+            search_radius = inputdlg('Enter Search Radius (km) : ','');
+            search_radius = str2double(char(search_radius));
+            %end
+            
+            %grid = [AA.HFR_GRIDS(gridval).lonlat(:,1) AA.HFR_GRIDS(gridval).lonlat(:,2)];
+            
+            temp_threshold = 0.5/24; %time window in fraction of day,i.e. how many hourly radial maps are included in total
+            MINRadials = 3;
+            MINSites = 2;
+            disp('')
+            disp(['Search Radius:',num2str(search_radius),' km'])
+            disp(['MINRadials: ',num2str(MINRadials)])
+            disp(['MINSites: ',num2str(MINSites)])
+            disp(['Time Window: ',num2str(temp_threshold),' day fraction'])
+            
+            
+            % makeTotals will only run for the gridpoint that was selected
+            DD = latlondist(newTUV.TUV.LonLat(:,2),newTUV.TUV.LonLat(:,1),gy,gx);
+            [~, mind] = min(abs(DD));
+            grid = [newTUV.TUV.LonLat(mind,2),newTUV.TUV.LonLat(mind,1)];
+            fprintf('Computing totals\n');
+            if isfield(newTUV, 'RTUV')
+                makeTotals_checktotal(newTUV.RTUV,'Grid',grid,'TimeStamp',newTUV.RTUV(1).TimeStamp, ...
+                    'spatthresh',search_radius,'tempthresh',temp_threshold, ...
+                    'CreationInfo','Teresa Updyke - ODU', ...
+                    'DomainName','','MinNumSites',MINSites,'MinNumRads',MINRadials,'graphics',1,'gridind',mind);
+            end
+            if isfield(newTUV, 'RADS')
+                makeTotals_checktotal(newTUV.RADS,'Grid',grid,'TimeStamp',newTUV.RADS(1).TimeStamp, ...
+                    'spatthresh',search_radius,'tempthresh',temp_threshold, ...
+                    'CreationInfo','Teresa Updyke - ODU', ...
+                    'DomainName','','MinNumSites',MINSites,'MinNumRads',MINRadials,'graphics',1,'gridind',mind);
+            end
         end % if 0
     end
 
