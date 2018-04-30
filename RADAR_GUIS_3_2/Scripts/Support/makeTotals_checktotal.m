@@ -325,11 +325,13 @@ for i = 1:length(p.TimeStamp)
       
       if p.graphics  %TLG added
         scaling=.0005;      % scaling for quiver arrow
+        try
         plot( loc(:,1), loc(:,2),'Marker','.','Color',mycolors(j,:),'LineStyle','none'); 
         h = quiver(loc(:,1),loc(:,2),scaling*uu,scaling*vv,0);
         set(h,'Color',mycolors(j,:));
         disp(sprintf('Site %d',j-1));
         disp([spsp drdr]);
+        end
         %sprintf('Index: %4d  Lon: %9.5f Lat: %9.5f #Rads: %2d \n',k, TUV.LonLat(k,1), TUV.LonLat(k,2), length(angle))
         %text(TUV.LonLat(k,1), TUV.LonLat(k,2), num2str(length(angle)),'FontSize',8);
       end
@@ -366,7 +368,7 @@ for i = 1:length(p.TimeStamp)
       TUV.ErrorEstimates(GDOPRadErr).Verr(k,i) = CE(2,2);
       TUV.ErrorEstimates(GDOPRadErr).UVCovariance(k,i) = CE(1,2);
     else
-      [u,v,C,fd] = tuvls(sp,angle);
+      [u,v,C,fd] = tuvLS(sp,angle);
     end
     
     TUV.U(k,i) = u;

@@ -33,6 +33,8 @@ function autoedit_gui(time)
    foutp = 'RDLe';
    fout = [foutp,'_[XXXX]_[yyyy]_[mm]_[dd]_[HH][MM].mat'];   
    funcname = 'radial_statedit1';
+   REDIT = [];
+   EDIT_INDEX = [];
    
 %MISCELLANEOUS
    ii = 1;
@@ -210,9 +212,10 @@ function autoedit_gui(time)
      basepath = repmat([rpath,pathext],size(stn,1),1);
      for jj = 1:size(stn,1);
          try
-         basepath(jj,:) = strrep(basepath(jj,:), '[XXXX]', stn(jj,:));
+         basepath(jj,:) = [strrep(basepath(jj,:), '[XXXX]', stn(jj,:)), '  '];
          end
      end
+     basepath = strtrim(basepath);
      myfilename = datenum_to_directory_filename(basepath,time,[repmat([stnpre,'_'],size(stn,1),1),stn,repmat(['_'],size(stn,1),1)],stnsuf,0);
      for xx = 1:size(myfilename,2)
        sitelist{ii,1} = myfilename{xx};
@@ -261,7 +264,7 @@ function autoedit_gui(time)
   end
   function oprefixbutton_Callback(hObject, eventdata)
            foutp = get(hObject,'String');
-           fout = [foutp,'_yyyy_mm_dd_HHMM.mat'];
+           fout = [foutp,'_[XXXX]_yyyy_mm_dd_HHMM.mat'];
   end
   function tpathstruct_Callback(hObject, eventdata)
            tpstruct = get(hObject,'String');
@@ -374,7 +377,7 @@ function viewfigcheckbox_Callback(hObject, eventdata, handles)
   times = (datenum(time):(tintvl/60)/24:datenum(endtime)); 
   times = times + 1/24/60/60; % add one second to times
   
-  for tt = 1:length(times);
+  for tt = 1:length(times)
 
      % insert new times into filenames
      newtimestr = datestr(times(tt),'yyyy_mm_dd_HHMM');
@@ -385,12 +388,12 @@ function viewfigcheckbox_Callback(hObject, eventdata, handles)
        finallist = strrep(sitelist,dtmp1,newtimestr);
      end
     
-     
+     fid = fopen([foutpath,funcname,'.txt'],'a');
 
      for j2=1:size(sitelist,1)  % loop over list of radial files
  
        fn = finallist{j2};  
-       fn = pcode_translation(fn, times(tt));
+       fn = pcode_translation(fn, times(tt),stn);
        d=dir(fn);
        if ~isempty(d)
          if strcmp(fn(end-3:end),'.mat')
@@ -404,7 +407,7 @@ function viewfigcheckbox_Callback(hObject, eventdata, handles)
      
        end
    
-     
+     if exist('RADIAL','var')==1
  
      if ~isempty(RADIAL)
             
@@ -424,15 +427,22 @@ function viewfigcheckbox_Callback(hObject, eventdata, handles)
        outfname = pcode_translation(outfname, times(tt),RADIAL.SiteName);     
       
         % call the editing routine here
-        eval([funcname,'(RADIAL,outfname,viewfig,savefig)']);     
+        eval(['[REDIT,EDIT_INDEX] = ',funcname,'(RADIAL,outfname,viewfig,savefig);']);     
         
-       
+        %record number of vectors discarded to a file
+        fprintf(fid,'%s %3d\n',char(RADIAL.FileName), length(EDIT_INDEX));
+        
         fout = strrep(fout,newtimestr,'yyyy_mm_dd_HHMM');  % return to generic filename
         outfname = strrep(outfname,RADIAL.SiteName,'[XXXX]');
         %outfname = ['''',foutpath,fout,''''];
-        clear RADIAL
+        clear RADIAL EDIT_INDEX
      end %if radial variable is not empty
+     else
+         fprintf('Could not load %s\n',fn);
+     end %if radial variable exists
      end %site loop
+     
+     fclose(fid);
   end  %time loop
   
   end  %end of "edit radials" function

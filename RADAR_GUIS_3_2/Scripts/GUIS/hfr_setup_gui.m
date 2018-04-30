@@ -1,4 +1,4 @@
-function hfr_setup_gui()
+function hfr_setup_gui(setupfile)
 % T Garner May 28 2010 
 % T Updyke expanded program and put into GUI form Nov 5 2011
 %
@@ -56,8 +56,12 @@ function hfr_setup_gui()
 
 format long
 
-if (exist('HFR_INFO.mat','file') == 2)
-    load('HFR_INFO.mat');
+if ~exist('setupfile','var')
+    setupfile = 'HFR_INFO.mat';
+end
+
+if (exist(setupfile,'file') == 2)
+    load(setupfile);
     if ~isempty(HFR_GRIDS)
         ngrids = size(HFR_GRIDS,2);
     else 
@@ -413,7 +417,11 @@ function addgridbutton_Callback(source,eventdata)
       else
         try
          ilimits = find(LONLAT(:,1)>= str2double(gridlimits{1}) & LONLAT(:,1) <= str2double(gridlimits{2}) & LONLAT(:,2) >= str2double(gridlimits{3}) & LONLAT(:,2) <= str2double(gridlimits{4}));
-         HFR_GRIDS(ngrids+1).lonlat = [LONLAT(ilimits,1) LONLAT(ilimits,2)]; 
+         if ~isempty(ilimits)
+             HFR_GRIDS(ngrids+1).lonlat = [LONLAT(ilimits,1) LONLAT(ilimits,2)];
+         else
+             HFR_GRIDS(ngrids+1).lonlat = LONLAT;
+         end
         catch
          disp('New grid limits failed. Using full grid.')
          HFR_GRIDS(ngrids+1).lonlat = LONLAT;

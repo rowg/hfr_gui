@@ -9,18 +9,18 @@ AA = load('HFR_INFO.mat');
 
 %gridval = 1; % start with first grid in the information file
 %if gridval <= size(AA.HFR_GRIDS.name,1)
-  sgrid = AA.HFR_GRIDS.name{gridval};
+  sgrid = char(AA.HFR_GRIDS(gridval).name);
 %else
 %  disp('Attempting to use custom grid') 
 %end
 
-if AA.HFR_GRIDS.spacing{gridval} == 2
+if AA.HFR_GRIDS(gridval).spacing == 2
     sc=0.0005;      % scaling for quiver arrow
 else
     sc = 0.005;
 end
-xmin = min(AA.HFR_GRIDS.lonlat{gridval}(:,1)); xmax = max(AA.HFR_GRIDS.lonlat{gridval}(:,1));
-ymin = min(AA.HFR_GRIDS.lonlat{gridval}(:,2)); ymax = max(AA.HFR_GRIDS.lonlat{gridval}(:,2));
+xmin = min(AA.HFR_GRIDS(gridval).lonlat(:,1)); xmax = max(AA.HFR_GRIDS(gridval).lonlat(:,1));
+ymin = min(AA.HFR_GRIDS(gridval).lonlat(:,2)); ymax = max(AA.HFR_GRIDS(gridval).lonlat(:,2));
 % pad so map is slightly larger than the grid
 pady = (ymax - ymin).*0.02;
 padx = (xmax - xmin).*0.02;

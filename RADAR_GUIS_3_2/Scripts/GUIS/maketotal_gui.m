@@ -1,4 +1,4 @@
-function maketotal_gui(time)
+function maketotal_gui(time,totgridval)
 % MAKETOTAL_GUI Compute total.
 
 
@@ -16,7 +16,9 @@ function maketotal_gui(time)
 %GRID
    AA = load('HFR_INFO.mat');
    STN_INFO = AA.HFR_STNS;
+   if ~exist('totgridval','var')
    totgridval = 1;
+   end
    totgrid = char(AA.HFR_GRIDS(totgridval).name);
    grid = [AA.HFR_GRIDS(totgridval).lonlat(:,1),AA.HFR_GRIDS(totgridval).lonlat(:,2)];
    
@@ -24,16 +26,16 @@ function maketotal_gui(time)
    SETTINGS.filelist = '';
    SETTINGS.method = 'UWLS';
 
-   if AA.HFR_GRIDS(totgridval).spacing == 2;
+   if AA.HFR_GRIDS(totgridval).spacing == 2
         SETTINGS.UWLS_radius = 2.5;
-   elseif AA.HFR_GRIDS(totgridval).spacing == 6;
+   elseif AA.HFR_GRIDS(totgridval).spacing == 6
         SETTINGS.UWLS_radius = 10;
    else
         SETTINGS.UWLS_radius = 0;
    end 
  
    SETTINGS.UWLS_temp_threshold = 0.5; %time window in hours,i.e. how many hourly radial maps are included in total
-   SETTINGS.UWLS_maxspeed=200; %cm/s
+   %SETTINGS.UWLS_maxspeed=200; %cm/s
    SETTINGS.UWLS_MINRadials = 3;
    SETTINGS.UWLS_MINSites = 2;
    SETTINGS.OI_decorrx = 10;
@@ -42,7 +44,7 @@ function maketotal_gui(time)
    SETTINGS.OI_errvar = 66;
    SETTINGS.OI_thresholdx = 0.6;
    SETTINGS.OI_thresholdy = 0.6;
-   SETTINGS.current_threshold = 500;  % maximum current allowed for total vector
+   SETTINGS.current_threshold = 300;  % maximum current allowed for total vector
 %INPUT AND OUTPUT INFORMATION
    filename = [];
    stn = char(STN_INFO(1).name);
@@ -181,7 +183,7 @@ function maketotal_gui(time)
 %DISPLAY UWLS SETTINGS (DEFAULT)          
    hLSradius = uicontrol('Style','edit','String',SETTINGS.UWLS_radius,...
            'Position',settings_position - [0 0 0 0], 'Callback',{@UWLSradius_Callback});    
-   hLSmaxspeed = uicontrol('Style','edit','String',SETTINGS.UWLS_maxspeed,...
+   hLSmaxspeed = uicontrol('Style','edit','String',SETTINGS.current_threshold,...
            'Position',settings_position - [0 30 0 0], 'Callback',{@UWLSmaxspeed_Callback});    
    hLSminrad = uicontrol('Style','edit','String',SETTINGS.UWLS_MINRadials,...
            'Position',settings_position - [0 60 0 0], 'Callback',{@UWLSminrad_Callback});    
@@ -217,7 +219,7 @@ function maketotal_gui(time)
 
    hLSradius = uicontrol('Style','edit','String',SETTINGS.UWLS_radius,...
            'Position',settings_position - [0 0 0 0], 'Callback',{@UWLSradius_Callback});    
-   hLSmaxspeed = uicontrol('Style','edit','String',SETTINGS.UWLS_maxspeed,...
+   hLSmaxspeed = uicontrol('Style','edit','String',SETTINGS.current_threshold,...
            'Position',settings_position - [0 30 0 0], 'Callback',{@UWLSmaxspeed_Callback});    
    hLSminrad = uicontrol('Style','edit','String',SETTINGS.UWLS_MINRadials,...
            'Position',settings_position - [0 60 0 0], 'Callback',{@UWLSminrad_Callback});    
@@ -353,12 +355,13 @@ function maketotal_gui(time)
 %ADD FILE TO LIST
   function addbutton_Callback(source,eventdata)  
      basepath = repmat([rpath,pathext],size(stn,1),1);
+     basepatht = repmat([rpath,pathext(1:end-2)],size(stn,1),1);
      for jj = 1:size(stn,1);
          try
-         basepath(jj,:) = strrep(basepath(jj,:), 'XXXX', stn(jj,:));
+         basepatht(jj,:) = strrep(basepath(jj,:), '[XXXX]', stn(jj,:));
          end
      end
-     myfilename = datenum_to_directory_filename(basepath,time,[repmat([stnpre,'_'],size(stn,1),1),stn,repmat(['_'],size(stn,1),1)],stnsuf,0);
+     myfilename = datenum_to_directory_filename(basepatht,time,[repmat([stnpre,'_'],size(stn,1),1),stn,repmat(['_'],size(stn,1),1)],stnsuf,0)
      for xx = 1:size(myfilename,2)
        sitelist{ii,1} = myfilename{xx};
        %only display file name not the path
@@ -446,11 +449,11 @@ function maketotal_gui(time)
            dtmp0 = str2double(get(hObject,'String'));
            if isnan(dtmp0)
              errordlg('You must enter a numeric value.','Bad Input','modal')
-             set(hObject,'String',SETTINGS.UWLS_maxspeed);
+             set(hObject,'String',SETTINGS.current_threshold);
              uicontrol(hObject)
            return
            end
-           SETTINGS.UWLS_maxspeed = dtmp0;
+           SETTINGS.current_threshold = dtmp0;
   end
   function UWLSminrad_Callback(hObject, eventdata)
            dtmp0 = str2double(get(hObject,'String'));
@@ -703,25 +706,28 @@ function maketotal_gui(time)
            
             [TUVraw,RTUV]=makeTotals(RADS,'Grid',grid,'TimeStamp',RADS(1).TimeStamp, ...
                    'spatthresh',SETTINGS.UWLS_radius,'tempthresh',SETTINGS.UWLS_temp_threshold./24, ...
-                   'MinNumSites',SETTINGS.UWLS_MINSites,'MinNumRads',SETTINGS.UWLS_MINRadials);
+                   'MinNumSites',SETTINGS.UWLS_MINSites,'MinNumRads',SETTINGS.UWLS_MINRadials,'WhichErrors',{'GDOPMaxOrthog','GDOP','FitDif','GDOPRadErr'});
             
                
           else    % OPTIMAL INTERPOLATION METHOD
             
             
-            [TUVraw,RTUV] = makeTotalsOI(RADS,'Grid',grid,'TimeStamp',RADS(1).TimeStamp,'mdlvar',SETTINGS.OI_svar, 'errvar',SETTINGS.OI_errvar,...
-                'sx', SETTINGS.OI_decorrx, 'sy', SETTINGS.OI_decorry, 'tempthresh',SETTINGS.UWLS_temp_threshold, 'normr', SETTINGS.OI_thresholdx,...
+%             [TUVraw,RTUV] = makeTotalsOI(RADS,'Grid',grid,'TimeStamp',RADS(1).TimeStamp,'mdlvar',SETTINGS.OI_svar, 'errvar',SETTINGS.OI_errvar,...
+%                 'sx', SETTINGS.OI_decorrx, 'sy', SETTINGS.OI_decorry, 'tempthresh',SETTINGS.UWLS_temp_threshold, 'normr', SETTINGS.OI_thresholdx,...
+%                 'MinNumSites',SETTINGS.UWLS_MINSites,'MinNumRads',SETTINGS.UWLS_MINRadials);
+               [TUVraw,RTUV] = testTotalsOI(RADS,'Grid',grid,'TimeStamp',RADS(1).TimeStamp,'mdlvar',SETTINGS.OI_svar, 'errvar',SETTINGS.OI_errvar,...
+                'sx', SETTINGS.OI_decorrx, 'sy', SETTINGS.OI_decorry, 'tempthresh',SETTINGS.UWLS_temp_threshold,...
                 'MinNumSites',SETTINGS.UWLS_MINSites,'MinNumRads',SETTINGS.UWLS_MINRadials);
-            
+
           end
                
-               
+          TUVraw.DomainName = totgrid;     
           
           TUVraw.ProcessingSteps(end+1) = AA.HFR_GRIDS(totgridval).description;
           
           % add names of stations if radial count > 0 and warnings if low count
-          for j3 = 1:length(RTUV);
-            if(length(RTUV(j3).U)) > 0;
+          for j3 = 1:length(RTUV)
+            if(length(RTUV(j3).U)) > 0
               TUVraw.SiteCodes(j3,:) = RTUV(j3).SiteCode;
               TUVraw.SiteRadialCounts(j3) = length(RTUV(j3).U);
               % check that all radial timestamps match with total timestamp
