@@ -1,7 +1,14 @@
-function autoedit_gui(time)
+function autoedit_gui(time,setupfile)
 % AUTOEDIT_GUI Run edit scripts on radial files.
+% INPUTS
+%   time <optional> provide in datenum format, default is current day at 00:00 if no time is given
+%   setupfile <optional> The file name of a setup file you would like to edit.
+%             If not specified, the default is HFR_INFO.mat
 
 % Initialize Variables
+if ~exist('setupfile','var')
+    setupfile = 'HFR_INFO.mat';
+end
 
 %TIME
    if ~exist('time','var')
@@ -15,7 +22,7 @@ function autoedit_gui(time)
    
   
 %INPUT AND OUTPUT INFORMATION
-   AA = load('HFR_INFO.mat');
+   AA = load(setupfile);
    STN_INFO = AA.HFR_STNS;
    filename = [];
    stn = char(STN_INFO(1).name);
@@ -172,7 +179,7 @@ function autoedit_gui(time)
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% CALLBACK FUNCTIONS  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 %RADIAL PATH
-  function radpathbutton_Callback(source,eventdata)
+  function radpathbutton_Callback(~,~)
     [newrpath] = uigetdir(rpath,'Choose a data file');
     rpath = [newrpath,'/'];
     hrpathtext = uicontrol('Style','text','String',rpath,...
@@ -181,19 +188,19 @@ function autoedit_gui(time)
   end
 
 %RADIAL PATH STRUCTURE
-   function pathstruct_Callback(hObject, eventdata)
+   function pathstruct_Callback(hObject, ~)
            pstruct = get(hObject,'String');
            pathext = pstruct;
    end
 
 
 %RADIAL PREFIX 
-   function rprefixbutton_Callback(hObject, eventdata)
+   function rprefixbutton_Callback(hObject, ~)
            stnpre = get(hObject,'String');
    end
 
 %RADIAL SUFFIX
-   function hsuffix_menu_Callback(source,eventdata) 
+   function hsuffix_menu_Callback(source,~) 
       % Determine the selected data set.
       str = get(source, 'String');
       val = get(source,'Value');
@@ -202,15 +209,15 @@ function autoedit_gui(time)
    end
 
 %SITE SELECTION(S)
-  function sitebox_Callback(hObject,eventdata)
+  function sitebox_Callback(hObject,~)
    site_selections = get(hObject,{'string','value'});
    stn = char(site_selections{1}(site_selections{2})); 
   end
 
 %ADD FILE TO LIST
-  function addbutton_Callback(source,eventdata)  
+  function addbutton_Callback(~,~)  
      basepath = repmat([rpath,pathext],size(stn,1),1);
-     for jj = 1:size(stn,1);
+     for jj = 1:size(stn,1)
          try
          basepath(jj,:) = [strrep(basepath(jj,:), '[XXXX]', stn(jj,:)), '  '];
          end
@@ -220,7 +227,7 @@ function autoedit_gui(time)
      for xx = 1:size(myfilename,2)
        sitelist{ii,1} = myfilename{xx};
        %only display file name not the path
-       [novar,filename , novar] = fileparts(char(myfilename{xx}));
+       [~,filename , ~] = fileparts(char(myfilename{xx}));
        %sitelistdisp{ii,1} = filename;
        sitelistdisp = sitelist;
        ii = ii+1;
@@ -234,12 +241,12 @@ function autoedit_gui(time)
   end    
 
 %RADIAL FILE LIST
-  function filelist_Callback(hObject,eventdata)
+  function filelist_Callback(~,~)
 
   end
 
 %CLEAR INPUT FILE LIST
-  function clearlistbutton_Callback(source,eventdata) 
+  function clearlistbutton_Callback(~,~) 
   % Clears the radial list.  
      clear sitelist sitelistdisp;
      sitelist = cell(15,1);
@@ -255,36 +262,45 @@ function autoedit_gui(time)
 
 
 %OUTPUT PATH AND PREFIX
-  function outpathbutton_Callback(source,eventdata)
+  function outpathbutton_Callback(~,~)
     [newopath] = uigetdir(foutpath,'Choose a data file');
     foutpath = [newopath,'/'];
     hopathtext = uicontrol('Style','text','String',foutpath,...
            'Position',opathtext_position); 
     set(hopathtext,'BackgroundColor',[0.8 0.9 0.9]);
   end
-  function oprefixbutton_Callback(hObject, eventdata)
+  function oprefixbutton_Callback(hObject, ~)
            foutp = get(hObject,'String');
            fout = [foutp,'_[XXXX]_yyyy_mm_dd_HHMM.mat'];
   end
-  function tpathstruct_Callback(hObject, eventdata)
+  function tpathstruct_Callback(hObject, ~)
            tpstruct = get(hObject,'String');
            tpathext = tpstruct;
   end
 
 
 %----------------------- SETTINGS FOR PROCESSING METHOD ----------------------%
-function funcbutton_Callback(source,eventdata) 
+function funcbutton_Callback(~,~) 
    cdir = pwd;
-   eval(['cd ''',AA.HFR_PATHS.gui_dir,'Scripts/MyEditScripts/''']);
+   try
+       eval(['cd ''',AA.HFR_PATHS.gui_dir,'Scripts/MyEditScripts/''']);
+   catch
+       eval(['cd ',AA.HFR_PATHS.gui_dir,'Scripts/MyEditScripts/']);
+   end
+   
    [funcname] = uigetfile('*.*','Choose a data file');
    funcname = funcname(1:end-2);
    hfunctext = uicontrol('Style','text','String',funcname,...
            'Position',settings_position - [ 0 30 0 0]);
    set(hfunctext,'BackgroundColor',[1 1 1]);
-   eval(['cd ''',cdir,''''])      
+   try
+     eval(['cd ''',cdir,''''])      
+   catch
+     eval(['cd ',cdir])      
+   end
 end
 
-function viewfigcheckbox_Callback(hObject, eventdata, handles)
+function viewfigcheckbox_Callback(hObject, ~, ~)
     if (get(hObject,'Value') == get(hObject,'Max'))
      viewfig = 1; %box checked
     else
@@ -292,7 +308,7 @@ function viewfigcheckbox_Callback(hObject, eventdata, handles)
     end
   end
 
- function savefigcheckbox_Callback(hObject, eventdata, handles)
+ function savefigcheckbox_Callback(hObject, ~, ~)
     if (get(hObject,'Value') == get(hObject,'Max'))
      savefig = 1; %box checked
     else
@@ -304,7 +320,7 @@ function viewfigcheckbox_Callback(hObject, eventdata, handles)
 %----------------------- BASIC PROCESSING SETTINGS ----------------------%
 
 %START TIME
-  function datebutton_Callback(hObject,eventdata) 
+  function datebutton_Callback(hObject,~) 
    % Allows user to enter the start time.
      orig_time = datestr(time,'yyyy_mm_dd_HHMM');
      dtmp0 = get(hObject,'String');  %from edit box, in the easy to read format
@@ -324,7 +340,7 @@ function viewfigcheckbox_Callback(hObject, eventdata, handles)
        %sitelistdisp = strrep(sitelistdisp,orig_time,dtmp1);
      catch
      end
-     try % why did I put this here??
+     try % ?
        sitelist = sitelist(1:ii-1);
        sitelistdisp = sitelistdisp(1:ii-1);
        sitelist = strrep(sitelist,orig_time,dtmp1)
@@ -342,7 +358,7 @@ function viewfigcheckbox_Callback(hObject, eventdata, handles)
   end
 
 %END TIME
-  function enddatebutton_Callback(hObject,eventdata) 
+  function enddatebutton_Callback(hObject,~) 
     % Allows user to enter the end time.
     dtmp0 = get(hObject,'String');  %from edit box, in the easy to read format
     try
@@ -355,7 +371,7 @@ function viewfigcheckbox_Callback(hObject, eventdata, handles)
   end
 
 %TIME INTERVAL
-  function ti_Callback(hObject,eventdata) 
+  function ti_Callback(hObject,~) 
     % Allows user to enter the time interval.
            dtmp0 = str2double(get(hObject,'String'));
            if isnan(dtmp0)
@@ -368,10 +384,10 @@ function viewfigcheckbox_Callback(hObject, eventdata, handles)
   end
 
 
-%%%%%%%%%%%%%%  FINALLY CALL THE FUNCTIONS THAT PROCESS RADIALS TO TOTALS !!!  %%%%%%%%%%%%% 
+%%%%%%%%%%%%%%  FINALLY CALL THE FUNCTION TO EDIT RADIALS  %%%%%%%%%%%%% 
 
 
-  function editbutton_Callback(source,eventdata) 
+  function editbutton_Callback(~,~) 
   % Calls edit function for radials.   
 
   times = (datenum(time):(tintvl/60)/24:datenum(endtime)); 
@@ -383,7 +399,7 @@ function viewfigcheckbox_Callback(hObject, eventdata, handles)
      newtimestr = datestr(times(tt),'yyyy_mm_dd_HHMM');
      try
        finallist = strrep(sitelist,dtmp1,newtimestr);
-     catch % again why is this section here??
+     catch % ?
        sitelist = sitelist(1:ii-1);
        finallist = strrep(sitelist,dtmp1,newtimestr);
      end
@@ -398,7 +414,11 @@ function viewfigcheckbox_Callback(hObject, eventdata, handles)
        if ~isempty(d)
          if strcmp(fn(end-3:end),'.mat')
             disp(['Loading...',fn])
-            eval(['RADIAL = load(''' ,fn,''')']);
+            try
+              eval(['RADIAL = load(''' ,fn,''')']);
+            catch
+              eval(['RADIAL = load(' ,fn,')']);
+            end
             RADIAL = RADIAL.RADIAL;
          else
             RADIAL = loadRDLFile(fn,1);
@@ -422,7 +442,11 @@ function viewfigcheckbox_Callback(hObject, eventdata, handles)
        fout = strrep(fout,'yyyy_mm_dd_HHMM',newtimestr);
        %outpath = pcode_translation([foutpath,tpathext], times(tt),RADIAL.SiteName);
 
-       outfname = ['''',foutpath,tpathext,fout,''''];
+       try
+         outfname = ['''',foutpath,tpathext,fout,''''];
+       catch
+         outfname = [foutpath,tpathext,fout];
+       end
        
        outfname = pcode_translation(outfname, times(tt),RADIAL.SiteName);     
       

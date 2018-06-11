@@ -7,10 +7,12 @@
 % then disregard those outliers and calculate another mean and std dev
 % remove any values greater than 4 the new std dev from the new mean
 
-function [] = radial_outlieredit1(R,outfname,vf,sf)
+function [RADIAL,EDIT_INDEX] = radial_outlieredit1(R,outfname,vf,sf)
 
 
 RADIAL_ORIG = R;
+RADIAL=[];
+EDIT_INDEX=[];
 
 m = 4;
 [nr,nc]=size(R.U);

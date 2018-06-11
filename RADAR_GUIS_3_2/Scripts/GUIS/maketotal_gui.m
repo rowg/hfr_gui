@@ -1,8 +1,16 @@
-function maketotal_gui(time,totgridval)
+function [] = maketotal_gui(time,totgridval,setupfile)
 % MAKETOTAL_GUI Compute total.
-
-
+%
+% INPUTS  (all are optional)
+%   time: provide in datenum format, default is current day at 00:00 if no time is given
+%   totgridval: the number of the grid file to initally display (numerical order from
+%   the list in the setup file), default is 1
+%   setupfile: name of the setup file to use, default is "HFR_INFO.mat"
 % Initialize Variables
+
+if ~exist('setupfile','var')
+    setupfile = 'HFR_INFO.mat';
+end
 
 %TIME
    if ~exist('time','var')
@@ -14,7 +22,7 @@ function maketotal_gui(time,totgridval)
    tintvl = 60;  % default time interval is 60 minutes, radial input with hourly timestamps
 
 %GRID
-   AA = load('HFR_INFO.mat');
+   AA = load(setupfile);
    STN_INFO = AA.HFR_STNS;
    if ~exist('totgridval','var')
    totgridval = 1;
@@ -35,7 +43,6 @@ function maketotal_gui(time,totgridval)
    end 
  
    SETTINGS.UWLS_temp_threshold = 0.5; %time window in hours,i.e. how many hourly radial maps are included in total
-   %SETTINGS.UWLS_maxspeed=200; %cm/s
    SETTINGS.UWLS_MINRadials = 3;
    SETTINGS.UWLS_MINSites = 2;
    SETTINGS.OI_decorrx = 10;
@@ -209,7 +216,7 @@ function maketotal_gui(time,totgridval)
    set([hLSradius_label,hLSmaxspeed_label,hLSminrad_label,hLSminsites_label,hLStempthreshold_label],'BackgroundColor',[1 1 1])
    
 %DISPLAY PROCESSING SETTINGS DEPENDING ON USER SELECTION
-   function selectmethod(source, eventdata);
+   function selectmethod(source,~)
    SETTINGS.method = get(get(source,'SelectedObject'),'String');    
     
    if strcmp(SETTINGS.method,'UWLS')
@@ -257,11 +264,6 @@ function maketotal_gui(time,totgridval)
            'Position',settings_position - [40 30+vs 0 0], 'Callback',{@OIsvar_Callback});    
    hOIerrvar = uicontrol('Style','edit','String',SETTINGS.OI_errvar,...
            'Position',settings_position - [40 60+vs 0 0], 'Callback',{@OIerrvar_Callback});    
-   hOIthresholdx = uicontrol('Style','edit','String',SETTINGS.OI_thresholdx,...
-           'Position',settings_position - [40 90+vs 0 0], 'Callback',{@OIthresholdx_Callback});    
-   hOIthresholdy = uicontrol('Style','edit','String',SETTINGS.OI_thresholdy,...
-           'Position',settings_position - [-50 90+vs 0 0], 'Callback',{@OIthresholdy_Callback});    
-
     
    hOIdecorrx_label = uicontrol('Style','text','String','Decorrelation (km) X,Y',...
            'Position',settings_position - [40+bxx 0+vs bxl bxh]);    
@@ -269,12 +271,10 @@ function maketotal_gui(time,totgridval)
            'Position',settings_position - [40+bxx 30+vs bxl bxh]);    
    hOIerrvar_label = uicontrol('Style','text','String','Error Variance (cm2/s2)',...
            'Position',settings_position - [40+bxx 60+vs bxl bxh]);    
-   hOIthresholdx_label = uicontrol('Style','text','String','Norm. Uncertainty Threshold X,Y',...
-           'Position',settings_position - [40+bxx 90+vs bxl bxh]);    
        
-   set([hOIdecorrx, hOIdecorry, hOIsvar, hOIerrvar, hOIthresholdx, hOIthresholdy],'BackgroundColor',[1 1 1],'ForegroundColor',[0 0 1]);
-   set([hOIdecorrx_label,hOIsvar_label,hOIerrvar_label,hOIthresholdx_label],'BackgroundColor',[1 1 1])    
-       
+   set([hOIdecorrx, hOIdecorry, hOIsvar, hOIerrvar],'BackgroundColor',[1 1 1],'ForegroundColor',[0 0 1]);
+   set([hOIdecorrx_label,hOIsvar_label,hOIerrvar_label],'BackgroundColor',[1 1 1])    
+   
    end
    
    end
@@ -291,18 +291,18 @@ function maketotal_gui(time,totgridval)
    hoprefix_edit, hsaverad, hoverlay_text, hnote_text, htpcode_label, htpcode_edit,...
    hLSradius, hLSmaxspeed, hLSminrad, hLSminsites, hLStempthreshold, ...
    hLSradius_label, hLSmaxspeed_label, hLSminrad_label, hLSminsites_label, hLStempthreshold_label, ...
-   hOIdecorrx, hOIdecorry, hOIsvar, hOIerrvar, hOIthresholdx, hOIthresholdy, ...
-   hOIdecorrx_label, hOIsvar_label, hOIerrvar_label, hOIthresholdx_label], ...
+   hOIdecorrx, hOIdecorry, hOIsvar, hOIerrvar, ...
+   hOIdecorrx_label, hOIsvar_label, hOIerrvar_label], ...
    'Units','normalized');
    
    set(mgf, 'Color',[0.4 0.6 0.9])  % blue
    set([hrpath_text, hopath_text,htpcode_edit],'BackgroundColor',[0.8 0.9 0.9]); % light green
    set([hdate_label,henddate_label,hti_label,hgrid_label,hsites, hfilelist, hstruct_label, houtprefix_label,htpcode_label,...
         hLSradius_label, hLSmaxspeed_label, hLSminrad_label, hLSminsites_label, hLStempthreshold_label, ...
-        hOIdecorrx_label, hOIsvar_label, hOIerrvar_label, hOIthresholdx_label],'BackgroundColor',[1,1,1]); %white
+        hOIdecorrx_label, hOIsvar_label, hOIerrvar_label],'BackgroundColor',[1,1,1]); %white
    set([hdate_edit,henddate_edit,hti_edit,...
         hLSradius, hLSmaxspeed, hLSminrad, hLSminsites, hLStempthreshold, ...
-        hOIdecorrx, hOIdecorry, hOIsvar, hOIerrvar, hOIthresholdx, hOIthresholdy],'BackgroundColor',[1,1,1],'ForegroundColor',[0 0 1]);
+        hOIdecorrx, hOIdecorry, hOIsvar, hOIerrvar],'BackgroundColor',[1,1,1],'ForegroundColor',[0 0 1]);
    set([hrprefix_edit, hoprefix_edit,hstruct_edit],'BackgroundColor',[0.8 0.9 0.9],'ForeGroundColor',[0 0 1]);
    % Assign the GUI a name to appear in the window title.
    set(mgf,'Name','makeTotals GUI')
@@ -317,7 +317,7 @@ function maketotal_gui(time,totgridval)
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% CALLBACK FUNCTIONS  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 %RADIAL PATH
-  function radpathbutton_Callback(source,eventdata)
+  function radpathbutton_Callback(~,~)
     [newrpath] = uigetdir(rpath,'Choose a data file');
     rpath = [newrpath,'/'];
     hrpathtext = uicontrol('Style','text','String',rpath,...
@@ -326,19 +326,19 @@ function maketotal_gui(time,totgridval)
   end
 
 %RADIAL PATH STRUCTURE
-   function pathstruct_Callback(hObject, eventdata)
+   function pathstruct_Callback(hObject, ~)
            pstruct = get(hObject,'String');
            pathext = pstruct;
    end
 
 
 %RADIAL PREFIX 
-   function rprefixbutton_Callback(hObject, eventdata)
+   function rprefixbutton_Callback(hObject, ~)
            stnpre = get(hObject,'String');
    end
 
 %RADIAL SUFFIX
-   function hsuffix_menu_Callback(source,eventdata) 
+   function hsuffix_menu_Callback(source,~) 
       % Determine the selected data set.
       str = get(source, 'String');
       val = get(source,'Value');
@@ -347,13 +347,13 @@ function maketotal_gui(time,totgridval)
    end
 
 %SITE SELECTION(S)
-  function sitebox_Callback(hObject,eventdata)
+  function sitebox_Callback(hObject,~)
    site_selections = get(hObject,{'string','value'});
    stn = char(site_selections{1}(site_selections{2})); 
   end
 
 %ADD FILE TO LIST
-  function addbutton_Callback(source,eventdata)  
+  function addbutton_Callback(~,~)  
      basepath = repmat([rpath,pathext],size(stn,1),1);
      basepatht = repmat([rpath,pathext(1:end-2)],size(stn,1),1);
      for jj = 1:size(stn,1);
@@ -378,17 +378,17 @@ function maketotal_gui(time,totgridval)
   end    
 
 %RADIAL FILE LIST
-  function filelist_Callback(hObject,eventdata)
+  function filelist_Callback(hObject,~)
     filesel = get(hObject,'value');
   end
 
 %CLEAR INPUT FILE LIST
-  function clearlistbutton_Callback(source,eventdata) 
+  function clearlistbutton_Callback(~,~) 
   % Clears the radial list.  
      %clear sitelist sitelistdisp;
      %sitelist = cell(15,1);
      %sitelistdisp = cell(15,1);
-     if ~isempty(filesel);
+     if ~isempty(filesel)
      sitelist(filesel) = '';
      sitelistdisp(filesel) = '';
      
@@ -404,26 +404,26 @@ function maketotal_gui(time,totgridval)
 
 
 %OUTPUT PATH AND PREFIX
-  function outpathbutton_Callback(source,eventdata)
+  function outpathbutton_Callback(~,~)
     [newopath] = uigetdir(foutpath,'Choose a data file');
     foutpath = [newopath,'/'];
     hopathtext = uicontrol('Style','text','String',foutpath,...
            'Position',opathtext_position); 
     set(hopathtext,'BackgroundColor',[0.8 0.9 0.9]);
   end
-  function oprefixbutton_Callback(hObject, eventdata)
+  function oprefixbutton_Callback(hObject,~)
            foutp = get(hObject,'String');
            fout = [foutp,'_yyyy_mm_dd_HHMM.mat'];
   end
 
 %TOTAL PATH STRUCTURE
-   function tpathstruct_Callback(hObject, eventdata)
+   function tpathstruct_Callback(hObject,~)
            tpstruct = get(hObject,'String');
            tpathext = tpstruct;
    end
 
 
-  function saveradcheckbox_Callback(hObject, eventdata, handles)
+  function saveradcheckbox_Callback(hObject, ~, ~)
     if (get(hObject,'Value') == get(hObject,'Max'))
      saverad = 1; %box checked
     else
@@ -435,7 +435,7 @@ function maketotal_gui(time,totgridval)
 %----------------------- SETTINGS FOR PROCESSING METHOD ----------------------%
 
 %UWLS PROCESS SETTINGS
-  function UWLSradius_Callback(hObject, eventdata)
+  function UWLSradius_Callback(hObject, ~)
            dtmp0 = str2double(get(hObject,'String'));
            if isnan(dtmp0)
              errordlg('You must enter a numeric value.','Bad Input','modal')
@@ -445,7 +445,7 @@ function maketotal_gui(time,totgridval)
            end
            SETTINGS.UWLS_radius = dtmp0;       
   end
-  function UWLSmaxspeed_Callback(hObject, eventdata)
+  function UWLSmaxspeed_Callback(hObject, ~)
            dtmp0 = str2double(get(hObject,'String'));
            if isnan(dtmp0)
              errordlg('You must enter a numeric value.','Bad Input','modal')
@@ -455,7 +455,7 @@ function maketotal_gui(time,totgridval)
            end
            SETTINGS.current_threshold = dtmp0;
   end
-  function UWLSminrad_Callback(hObject, eventdata)
+  function UWLSminrad_Callback(hObject, ~)
            dtmp0 = str2double(get(hObject,'String'));
            if isnan(dtmp0)
              errordlg('You must enter a numeric value.','Bad Input','modal')
@@ -465,7 +465,7 @@ function maketotal_gui(time,totgridval)
            end    
            SETTINGS.UWLS_MINRadials = dtmp0;
   end
-  function UWLSminsites_Callback(hObject, eventdata)
+  function UWLSminsites_Callback(hObject, ~)
            dtmp0 = str2double(get(hObject,'String'));
            if isnan(dtmp0)
              errordlg('You must enter a numeric value.','Bad Input','modal')
@@ -475,7 +475,7 @@ function maketotal_gui(time,totgridval)
            end    
            SETTINGS.UWLS_MINSites = dtmp0;
   end
-  function UWLStempthreshold_Callback(hObject, eventdata)
+  function UWLStempthreshold_Callback(hObject, ~)
            dtmp0 = str2double(get(hObject,'String'));
            if isnan(dtmp0)
              errordlg('You must enter a numeric value.','Bad Input','modal')
@@ -487,7 +487,7 @@ function maketotal_gui(time,totgridval)
   end
 
 %OI PROCESS SETTINGS
-  function OIdecorrx_Callback(hObject, eventdata)
+  function OIdecorrx_Callback(hObject, ~)
            dtmp0 = str2double(get(hObject,'String'));
            if isnan(dtmp0)
              errordlg('You must enter a numeric value.','Bad Input','modal')
@@ -497,7 +497,7 @@ function maketotal_gui(time,totgridval)
            end    
            SETTINGS.OI_decorrx = dtmp0;         
   end
-  function OIdecorry_Callback(hObject, eventdata)
+  function OIdecorry_Callback(hObject, ~)
            dtmp0 = str2double(get(hObject,'String'));
            if isnan(dtmp0)
              errordlg('You must enter a numeric value.','Bad Input','modal')
@@ -507,7 +507,7 @@ function maketotal_gui(time,totgridval)
            end    
            SETTINGS.OI_decorry = dtmp0;         
   end
-  function OIsvar_Callback(hObject, eventdata)
+  function OIsvar_Callback(hObject, ~)
            dtmp0 = str2double(get(hObject,'String'));
            if isnan(dtmp0)
              errordlg('You must enter a numeric value.','Bad Input','modal')
@@ -517,7 +517,7 @@ function maketotal_gui(time,totgridval)
            end    
            SETTINGS.OI_svar = dtmp0;         
   end
-  function OIerrvar_Callback(hObject, eventdata)
+  function OIerrvar_Callback(hObject, ~)
            dtmp0 = str2double(get(hObject,'String'));
            if isnan(dtmp0)
              errordlg('You must enter a numeric value.','Bad Input','modal')
@@ -527,59 +527,20 @@ function maketotal_gui(time,totgridval)
            end    
            SETTINGS.OI_errvar = dtmp0;         
   end
-  function OIthresholdx_Callback(hObject, eventdata)
-           dtmp0 = str2double(get(hObject,'String'));
-           if isnan(dtmp0)
-             errordlg('You must enter a numeric value.','Bad Input','modal')
-             set(hObject,'String',SETTINGS.OI_thresholdx);
-             uicontrol(hObject)
-           return
-           end    
-           SETTINGS.OI_thresholdx = dtmp0;         
-  end
-  function OIthresholdy_Callback(hObject, eventdata)
-           dtmp0 = str2double(get(hObject,'String'));
-           if isnan(dtmp0)
-             errordlg('You must enter a numeric value.','Bad Input','modal')
-             set(hObject,'String',SETTINGS.OI_thresholdy);
-             uicontrol(hObject)
-           return
-           end    
-           SETTINGS.OI_thresholdy = dtmp0;
-  end
 
 %----------------------- BASIC PROCESSING SETTINGS ----------------------%
 
 %GRID
-  function grid_Callback(source, eventdata)
+  function grid_Callback(source, ~)
    totgridstr = get(source, 'String');
    totgridval = get(source,'Value');
    totgrid = totgridstr{totgridval}; 
-   grid = [AA.HFR_GRIDS(totgridval).lonlat(:,1),AA.HFR_GRIDS(totgridval).lonlat(:,2)];
-   
+   grid = [AA.HFR_GRIDS(totgridval).lonlat(:,1),AA.HFR_GRIDS(totgridval).lonlat(:,2)];  
    msgbox('Grid changed.  Set appropriate UWLS radius and file output path for this grid.');
-     % Changing the grid will change the output file path
-       %foutpath = [AA.HFR_PATHS.gui_dir,'TestTotals/',totgrid,'/']; 
-       %hopathtext = uicontrol('Style','text','String',foutpath,...
-       %    'Position',opathtext_position); 
-       %set(hopathtext,'Units','normalized','BackgroundColor',[0.8 0.9 0.9])
-       
-     % Changing the grid will change the UWLS radius according to grid spacing
-       %if AA.HFR_GRIDS(totgridval).spacing == 2;
-       % SETTINGS.UWLS_radius = 2.5;
-       %elseif AA.HFR_GRIDS(totgridval).spacing == 6;
-       % SETTINGS.UWLS_radius = 10;
-       %else
-       %SETTINGS.UWLS_radius = inputdlg('Enter Search Radius (km) : ','');
-       % SETTINGS.UWLS_radius = str2double(char(SETTINGS.UWLS_radius));
-       %end    
-       %hLSradius = uicontrol('Style','edit','String',SETTINGS.UWLS_radius,...
-       %    'Position',settings_position - [0 0 0 0], 'Callback',{@UWLSradius_Callback}); 
-       %set(hLSradius,'Units','normalized','BackgroundColor',[1 1 1],'ForegroundColor',[0 0 1]);
   end
 
 %START TIME
-  function datebutton_Callback(hObject,eventdata) 
+  function datebutton_Callback(hObject,~) 
    % Allows user to enter the start time.
      orig_time = datestr(time,'yyyy_mm_dd_HHMM');
      dtmp0 = get(hObject,'String');  %from edit box, in the easy to read format
@@ -617,7 +578,7 @@ function maketotal_gui(time,totgridval)
   end
 
 %END TIME
-  function enddatebutton_Callback(hObject,eventdata) 
+  function enddatebutton_Callback(hObject,~) 
     % Allows user to enter the end time.
     dtmp0 = get(hObject,'String');  %from edit box, in the easy to read format
     try
@@ -630,7 +591,7 @@ function maketotal_gui(time,totgridval)
   end
 
 %TIME INTERVAL
-  function ti_Callback(hObject,eventdata) 
+  function ti_Callback(hObject,~) 
     % Allows user to enter the time interval.
            dtmp0 = str2double(get(hObject,'String'));
            if isnan(dtmp0)
@@ -643,17 +604,17 @@ function maketotal_gui(time,totgridval)
   end
 
 
-%%%%%%%%%%%%%%  FINALLY CALL THE FUNCTIONS THAT PROCESS RADIALS TO TOTALS !!!  %%%%%%%%%%%%% 
+%%%%%%%%%%%%%%  CALL THE FUNCTIONS THAT PROCESS RADIALS TO TOTALS  %%%%%%%%%%%%% 
 
 
-  function proctotalbutton_Callback(source,eventdata) 
+  function proctotalbutton_Callback(~,~) 
   % Calculates total vectors.   
 
   times = (datenum(time):(tintvl/60)/24:datenum(endtime)); 
   times = times + 1/24/60/60; % add one second to times
   %sitelist
   
-  for tt = 1:length(times);
+  for tt = 1:length(times)
 
      % insert new times into filenames
      newtimestr = datestr(times(tt),'yyyy_mm_dd_HHMM');
@@ -711,11 +672,7 @@ function maketotal_gui(time,totgridval)
                
           else    % OPTIMAL INTERPOLATION METHOD
             
-            
-%             [TUVraw,RTUV] = makeTotalsOI(RADS,'Grid',grid,'TimeStamp',RADS(1).TimeStamp,'mdlvar',SETTINGS.OI_svar, 'errvar',SETTINGS.OI_errvar,...
-%                 'sx', SETTINGS.OI_decorrx, 'sy', SETTINGS.OI_decorry, 'tempthresh',SETTINGS.UWLS_temp_threshold, 'normr', SETTINGS.OI_thresholdx,...
-%                 'MinNumSites',SETTINGS.UWLS_MINSites,'MinNumRads',SETTINGS.UWLS_MINRadials);
-               [TUVraw,RTUV] = testTotalsOI(RADS,'Grid',grid,'TimeStamp',RADS(1).TimeStamp,'mdlvar',SETTINGS.OI_svar, 'errvar',SETTINGS.OI_errvar,...
+                [TUVraw,RTUV] = makeTotalsOI(RADS,'Grid',grid,'TimeStamp',RADS(1).TimeStamp,'mdlvar',SETTINGS.OI_svar, 'errvar',SETTINGS.OI_errvar,...
                 'sx', SETTINGS.OI_decorrx, 'sy', SETTINGS.OI_decorry, 'tempthresh',SETTINGS.UWLS_temp_threshold,...
                 'MinNumSites',SETTINGS.UWLS_MINSites,'MinNumRads',SETTINGS.UWLS_MINRadials);
 
@@ -751,8 +708,6 @@ function maketotal_gui(time,totgridval)
               TUVraw.Settings.OI_decorry = NaN;
               TUVraw.Settings.OI_svar = NaN;
               TUVraw.Settings.OI_errvar = NaN;
-              TUVraw.Settings.OI_thresholdx = NaN;
-              TUVraw.Settings.OI_thresholdy = NaN;
           end
           
           [TUV,TI] = cleanTotals(TUVraw,SETTINGS.current_threshold);
@@ -760,9 +715,18 @@ function maketotal_gui(time,totgridval)
           
             
          if saverad
-           eval(['save -v7.3 ''',outpath,fout,''' TUV RADS RTUV']);
+             try
+                eval(['save ''',outpath,fout,''' TUV RADS RTUV']);
+             catch
+                eval(['save ',outpath,fout,' TUV RADS RTUV']);
+             end
          else
-           eval(['save -v7.3 ''',outpath,fout,''' TUV']);
+             try
+                eval(['save ''',outpath,fout,''' TUV']);
+             catch
+                eval(['save ',outpath,fout,' TUV']);
+             end
+               
          end
          disp(['total field created and saved for ',outpath,fout, ' at ' datestr(now)]);
          clear TUV RADS RTUV finallist

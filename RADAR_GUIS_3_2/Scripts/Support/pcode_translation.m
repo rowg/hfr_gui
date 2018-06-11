@@ -20,7 +20,7 @@ function [fout] = pcode_translation(fin, t, stn)
 %   translates to 'CBBT/meas_Nov/2012_11/'
 
 
-% uses unique character & that is not allowed in paths to identify codes in the path code    
+% uses unique characters [] that are not allowed in paths to identify codes in the path code    
             try   
                 fin   = strrep(fin,'[yyyy]',datestr((t),'yyyy'));
             end

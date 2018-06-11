@@ -1,6 +1,9 @@
 
-function [] = radial_statedit1(R,outfname,vf,sf)
+function [RADIAL,EDIT_INDEX] = radial_statedit1(R,outfname,vf,sf)
 
+RADIAL=[];
+EDIT_INDEX=[];
+RADIAL_ORIG = R;
 
 if isfield(R.OtherMetadata,'RawData')
  
@@ -10,7 +13,8 @@ EDIT_INDEX = find((ERTC == 2 & ETMP > 12 ) | isnan(ETMP));  % | isnan(ETMP)
 inan = find(isnan(ETMP));
 disp(['ETMP NaN Count is ',num2str(length(inan))]);
 
-RADIAL_ORIG = R;
+
+
 RQ = R;
 RQ.U(EDIT_INDEX) = NaN;
 RQ.V(EDIT_INDEX) = NaN;

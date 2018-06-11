@@ -1,14 +1,18 @@
-function radar_display_gui(time, gridval, setupfile)
-% RADAR_DISPLAY_GUI View and edit HFRADAR radial (and total) vector data.
+function radar_display_gui(time, mapval, setupfile)
+% RADAR_DISPLAY_GUI View and edit HF RADAR radial (and total) vector data.
 %
-% INPUT time in datenum format,  defaults to current time if no time is given
+% INPUTS  (all are optional)
+%   time: provide in datenum format, default is current day at 00:00 if no time is given
+%   mapval: the number of the map file to initally display (numerical order from
+%   the list in the setup file), default is 1
+%   setupfile: name of the setup file to use, default is "HFR_INFO.mat"
 
 if ~exist('setupfile','var')
     setupfile = 'HFR_INFO.mat';
 end
 
-if ~exist('gridval','var')
-    gridval = 1;
+if ~exist('mapval','var')
+    mapval = 1;
 end
 
 if exist(setupfile,'file') ~= 2
@@ -18,8 +22,15 @@ end
 AA = load(setupfile);             % load all the set up file information
 setupfile = [AA.HFR_PATHS.gui_dir, setupfile];       % make this variable include the complete path
 try
-    eval(['javaaddpath(''',AA.HFR_PATHS.gui_dir,'Scripts/Support/toolsUI-4.1.jar'')']);
+    try
+      eval(['javaaddpath(''',AA.HFR_PATHS.gui_dir,'Scripts/Support/toolsUI-4.3.jar'')']);
+    catch
+      eval(['javaaddpath(',AA.HFR_PATHS.gui_dir,'Scripts/Support/toolsUI-4.3.jar)']); 
+    end
+catch
+    fprintf('Could not load Java tools.\n')
 end
+
 warning('off','MATLAB:hg:patch:RGBColorDataNotSupported');
 
 % DEFINE AND INITIALIZE VARIABLES
@@ -33,11 +44,11 @@ radialpath = AA.HFR_PATHS.radial_dir;  % default path for radial files (assumes 
 totalpath = AA.HFR_PATHS.total_dir;    % default path for total files
 rpcode = AA.HFR_PATHS.radial_pcode;    % default path code for radial files
 tpcode = AA.HFR_PATHS.total_pcode;     % default path code for total files
-pathspace = 0;                         % does path name contain a space?
-rpre = 'RDLm';                         % standard prefix for radial file
-tpre = 'TUVm';                         % standard prefix for total file
-srpre = '';                            % user defined prefix for radial file
-stpre = 'tuv_oi_MARA';                            % user defined prefix for total file
+pathspace = 0;                         % does path name contain a space?s
+srpre = AA.HFR_PATHS.radial_prefix;    % user defined prefix for radial file
+stpre = AA.HFR_PATHS.total_prefix;     % user defined prefix for total file
+rpre = 'RDLm';                         % prefix for radial file
+tpre = 'TOTm';                         % prefix for total file
 sname = char(STN_INFO(1).name);        % station 4 letter name, default is first in the list
 nf = 1;                                % number of files in user definied filelist
 filelist = cell(nf,1);                 % user defined list for multiple file plots
@@ -53,8 +64,8 @@ oival = 0.6;                           % OI threshold cutoff for display
 maxcolor = 60;                        % maximum velocity on color scale for m_vec (cm/s)
 ns = 0;                                % north/south color scheme
 ew = 0;                                % east/west color scheme
-gc = 1;                                % method for defining custom grid
-fw = 800; fh = 1000;                   % width and height of figure window in pixels
+gc = 1;                                % method for defining custom map%
+fw = 1000; fh = 800;                   % width and height of figure window in pixels
 ii = []; cvals = []; aa = [];          % variables for use in function loops, etc
 imap = []; temp = [];
 newfilepath = 0;
@@ -83,18 +94,18 @@ mycolors = repmat(mycolors,10,1);
 if exist('time','var')
     dtmp = datestr(time,'yyyy_mm_dd_HHMM');
 else
-    dtmp = datestr(now-(1/24),'yyyy_mm_dd_HHMM');
+    dtmp = datestr(floor(now),'yyyy_mm_dd_HHMM');
 end
 yy = str2double(dtmp(1:4));  mm = str2double(dtmp(6:7));  dd = str2double(dtmp(9:10)); hh = str2double(dtmp(12:13)); MM = str2double(dtmp(14:15));
 dv = [yy mm dd hh MM 0];
 dnum = datenum(dv);
 
-%SET THE INITIAL GRID
-cgnum = size(AA.HFR_GRIDS,2) + 1;
-AA.HFR_GRIDS(cgnum).name = {'Custom_Zoom'};  % set up a space for user to create custom temporary grid
-%gridval = 1;                          % start with first grid in the information file
-sgrid = char(AA.HFR_GRIDS(gridval).name);   % start with first grid name in the information file
-scq = AA.HFR_GRIDS(gridval).scalefactor;
+%SET THE INITIAL MAP
+cgnum = size(AA.HFR_MAPS,2) + 1;
+AA.HFR_MAPS(cgnum).name = {'Custom_Zoom'};  % set up a space for user to create custom temporary map
+%mapval = 1;                          % start with first map in the information file
+sgrid = char(AA.HFR_MAPS(mapval).name);   % start with first map name in the information file
+scq = AA.HFR_MAPS(mapval).scalefactor;
 sc = 0.1;     % m_vec arrows
 
 arrow_spd = 20;     % use this speed as reference for scale  (quiver arrows)
@@ -122,11 +133,11 @@ eh(3) = uimenu(mh,'Label','Edit Radial (Manual)','Callback',{@editbutton_Callbac
 eh(4) = uimenu(mh,'Label','Compare Radials','Callback',{@compareradbutton_Callback});
 eh(5) = uimenu(mh,'Label','Check Total','Callback',{@checktotalbutton_Callback});
 
-gdh = uimenu(f,'Label','Grid');
-ngrid = size(AA.HFR_GRIDS,2);
+gdh = uimenu(f,'Label','Map');
+ngrid = size(AA.HFR_MAPS,2);
 gridhandles = zeros(ngrid,1);
 for gg = 1:ngrid
-    gridhandles(gg) = uimenu(gdh,'Label',char(AA.HFR_GRIDS(gg).name),'Tag','Grid','Callback',{@grid_Callback});
+    gridhandles(gg) = uimenu(gdh,'Label',char(AA.HFR_MAPS(gg).name),'Tag','Grid','Callback',{@map_Callback});
 end
 
 siteh = uimenu(f,'Label','Site');
@@ -150,7 +161,7 @@ eph(9) = uimenu(pmh,'Label','Set OI Threshold for Display','Callback',{@oibutton
 
 
 xmh = uimenu(f,'Label','Extras');
-exh(1) = uimenu(xmh,'Label','Define Custom Zoom','Callback',{@customgrid_Callback});
+exh(1) = uimenu(xmh,'Label','Define Custom Zoom','Callback',{@custommap_Callback});
 exh(2) = uimenu(xmh,'Label','Select Plot List File','Callback',{@createplotlistbutton_Callback});
 exh(3) = uimenu(xmh,'Label','Towards/Away Colors (default)','Callback',{@tabutton_Callback});
 exh(4) = uimenu(xmh,'Label','North/South Colors','Callback',{@nsbutton_Callback});
@@ -218,9 +229,9 @@ tottool = uitoggletool(tbh,'CData',ICONS.total_icon,'Separator','on',...
 rtypetool = uitoggletool(tbh,'CData',ICONS.rtype_icon,'Separator','on','Tag','RTypeTool',...
     'TooltipString','Plot Ideal Radials',...
     'HandleVisibility','off','ClickedCallback',{@display_settings});
-flagtool = uitoggletool(tbh,'CData',ICONS.flag_icon,'Separator','on','Tag','FlagTool',...
-    'TooltipString','Display Flagged Vectors',...
-    'HandleVisibility','off','ClickedCallback',{@display_settings});
+% flagtool = uitoggletool(tbh,'CData',ICONS.flag_icon,'Separator','on','Tag','FlagTool',...
+%     'TooltipString','Display Flagged Vectors',...
+%     'HandleVisibility','off','ClickedCallback',{@display_settings});
 choosefiletool = uitoggletool(tbh,'CData',ICONS.choosefile_icon,'Separator','on',...
     'TooltipString','Select a File',...
     'HandleVisibility','off','ClickedCallback',{@display_settings});
@@ -325,13 +336,13 @@ clearbutton_Callback;
         tintvl = str2double(char(tintvl));
     end
 
-    function grid_Callback(~,~)
-        gridval = get(gcbo,'Position');
-        sgrid = char(AA.HFR_GRIDS(gridval).name);
+    function map_Callback(~,~)
+        mapval = get(gcbo,'Position');
+        sgrid = char(AA.HFR_MAPS(mapval).name);
         
-        %scq = (latlondist(AA.HFR_GRIDS(gridval).limits(1,3),AA.HFR_GRIDS(gridval).limits(1,1), AA.HFR_GRIDS(gridval).limits(1,4), AA.HFR_GRIDS(gridval).limits(1,2))./376000);
+        %scq = (latlondist(AA.HFR_MAPS(mapval).limits(1,3),AA.HFR_MAPS(mapval).limits(1,1), AA.HFR_MAPS(mapval).limits(1,4), AA.HFR_MAPS(mapval).limits(1,2))./376000);
         %scq = 0.003;
-        scq = AA.HFR_GRIDS(gridval).scalefactor;
+        scq = AA.HFR_MAPS(mapval).scalefactor;
         clearbutton_Callback;
         display_settings;
     end
@@ -445,15 +456,28 @@ clearbutton_Callback;
                     if strcmp(get(choosefiletool,'State'),'on') %if 'choose file" box is checked
                         cdir = pwd;
                         if ~isequal(newfilepath,0)
-                            eval(['cd ''',newfilepath,'''']);
+                            try
+                              eval(['cd ''',newfilepath,'''']);
+                            catch
+                              eval(['cd ',newfilepath]);
+                            end
                         else
-                            %eval(['cd ''',AA.HFR_PATHS.gui_dir,'TestTotals/',char(AA.HFR_GRIDS(gridval).name),'''']);
-                            eval(['cd ''',AA.HFR_PATHS.gui_dir,'''']);
+                            try
+                            %eval(['cd ''',AA.HFR_PATHS.gui_dir,'TestTotals/',char(AA.HFR_MAPS(mapval).name),'''']);
+                                eval(['cd ''',AA.HFR_PATHS.gui_dir,'''']);
+                            catch
+                                eval(['cd ',AA.HFR_PATHS.gui_dir]);
+                            end
+                            
                         end
                         [newfile,newfilepath] = uigetfile('*.*','Choose a data file');
                         myfilename = [newfilepath,newfile];
                         disp(['Loading...',myfilename])
-                        eval(['cd ''',cdir,''''])
+                        try
+                          eval(['cd ''',cdir,''''])
+                        catch
+                          eval(['cd ',cdir])
+                        end
                         % GET TOTALS FILE NAME FROM DEFAULT SETTINGS
                     else
                         myfilename = getfilename();
@@ -478,14 +502,27 @@ clearbutton_Callback;
                     if strcmp(get(choosefiletool,'State'),'on') %if 'choose file" box is checked
                         cdir = pwd;
                         if ~isequal(newfilepath,0)
-                            eval(['cd ''',newfilepath,'''']);
+                            try
+                              eval(['cd ''',newfilepath,'''']);
+                            catch
+                              eval(['cd ',newfilepath]);
+                            end
                         else
-                            eval(['cd ''',AA.HFR_PATHS.gui_dir,'RadialEdits/',sname,'''']);
+                            try
+                              eval(['cd ''',AA.HFR_PATHS.gui_dir,'RadialEdits/',sname,'''']);
+                            catch
+                              eval(['cd ',AA.HFR_PATHS.gui_dir,'RadialEdits/',sname]);
+                            end
                         end
-                        [newfile,newfilepath] = uigetfile('*.*','Choose a data file')
+                        [newfile,newfilepath] = uigetfile('*.*','Choose a data file');
                         myfilename = [newfilepath,newfile];
                         disp(['Loading...',myfilename])
-                        eval(['cd ''',cdir,''''])
+                        try
+                          eval(['cd ''',cdir,''''])
+                        catch
+                          eval(['cd ',cdir])
+                        end
+                        
                         % LOAD RADIAL FILE NAME FROM DEFAULT SETTINGS
                     else
                         myfilename = getfilename();
@@ -608,7 +645,7 @@ clearbutton_Callback;
                 end
                 if strcmp(get(qtool,'State'),'on')
                     %do not plot vectors outside the map/zoom area
-                    imap = find(DATA.LonLat(:,1)>AA.HFR_GRIDS(gridval).limits(1,1) & DATA.LonLat(:,1)<AA.HFR_GRIDS(gridval).limits(1,2) & DATA.LonLat(:,2)>AA.HFR_GRIDS(gridval).limits(1,3) & DATA.LonLat(:,2)<AA.HFR_GRIDS(gridval).limits(1,4));
+                    imap = find(DATA.LonLat(:,1)>AA.HFR_MAPS(mapval).limits(1,1) & DATA.LonLat(:,1)<AA.HFR_MAPS(mapval).limits(1,2) & DATA.LonLat(:,2)>AA.HFR_MAPS(mapval).limits(1,3) & DATA.LonLat(:,2)<AA.HFR_MAPS(mapval).limits(1,4));
                     plothandles(pcount) = m_quiver(DATA.LonLat(imap,1), DATA.LonLat(imap,2), DATA.U(imap).*scq,DATA.V(imap).*scq,0);
                     
                     if strcmp(get(tottool,'State'),'off') && strcmp(get(rbtool,'State'),'on') % for radials with red/blue settings
@@ -622,7 +659,7 @@ clearbutton_Callback;
                             to = find(DATA.U(imap) > 0);       % current going EAST
                             [~, dchk] = uv2spdir(DATA.U(imap),DATA.V(imap));
                             rm1 = find(dchk > 45 & dchk < 135);% find angles that are not close enough to horizontal
-                            rm2 = find(dchk > 225 & dchk < 315)
+                            rm2 = find(dchk > 225 & dchk < 315);
                             rmang = [rm1;rm2];
                         else
                             to = find(DATA.RadComp(imap) > 0); % current going away from RADAR
@@ -687,7 +724,7 @@ clearbutton_Callback;
                     % make all vectors the same size
                     clear tspd tdir Usc Vsc
                     %do not plot vectors outside the map area
-                    imap = find(DATA.LonLat(:,1)>AA.HFR_GRIDS(gridval).limits(1,1) & DATA.LonLat(:,1)<AA.HFR_GRIDS(gridval).limits(1,2) & DATA.LonLat(:,2)>AA.HFR_GRIDS(gridval).limits(1,3) & DATA.LonLat(:,2)<AA.HFR_GRIDS(gridval).limits(1,4));
+                    imap = find(DATA.LonLat(:,1)>AA.HFR_MAPS(mapval).limits(1,1) & DATA.LonLat(:,1)<AA.HFR_MAPS(mapval).limits(1,2) & DATA.LonLat(:,2)>AA.HFR_MAPS(mapval).limits(1,3) & DATA.LonLat(:,2)<AA.HFR_MAPS(mapval).limits(1,4));
                     [spd,direc] = uv2spdir(DATA.U(imap),DATA.V(imap));
                     [~,isort] = sort(spd);
                     scs = zeros(length(spd),1) + sc;
@@ -700,15 +737,18 @@ clearbutton_Callback;
                     else                                          % set color categories for radials
                         if strcmp(get(rbtool,'State'),'on')       % purple/blue color scheme
                             if ns
-                                to = find(DATA.V(:) > 0);            % current going NORTH
+                                to = find(DATA.V(imap) > 0);            % current going NORTH
                             elseif ew
-                                to = find(DATA.U(:) > 0);            % current going EAST
+                                to = find(DATA.U(imap) > 0);            % current going EAST
                             else
-                                to = find(DATA.RadComp(:) > 0);      % current going away from RADAR
+                                to = find(DATA.RadComp(imap) > 0);      % current going away from RADAR
                             end
                             spd(to) = -(spd(to));                    % when sorted this puts all the "to" arrows in the blue color range
                             edges = -maxcolor:1:maxcolor;
                             cmap = colormap(cool(length(edges)+1));
+                            %use interpolated version of Hugh Roarty redblue colormap for mvec arrow dual color scheme 
+                            cmap = interp_redblue(length(edges)+1);
+                            colormap(cmap);
                         else                                       % standard jet color scheme
                             edges = 1:1:maxcolor;  %cm/s
                             cmap = colormap(jet(length(edges)+1));
@@ -767,16 +807,16 @@ clearbutton_Callback;
         titlelab = cell(1,1);
         
         try
-            xmin = min(AA.HFR_GRIDS(gridval).lonlat(:,1)); xmax = max(AA.HFR_GRIDS(gridval).lonlat(:,1));
-            ymin = min(AA.HFR_GRIDS(gridval).lonlat(:,2)); ymax = max(AA.HFR_GRIDS(gridval).lonlat(:,2));
+            xmin = AA.HFR_MAPS(mapval).limits(1); xmax = AA.HFR_MAPS(mapval).limits(2);
+            ymin = AA.HFR_MAPS(mapval).limits(3); ymax = AA.HFR_MAPS(mapval).limits(4);
         catch
             msgbox('Warning: Define custom zoom under "Extras" menu.');
         end
         
         try  %added this because quotes handled differently on different systems
-            plotBasemap([AA.HFR_GRIDS(gridval).limits(1,1) AA.HFR_GRIDS(gridval).limits(1,2)],[AA.HFR_GRIDS(gridval).limits(1,3) AA.HFR_GRIDS(gridval).limits(1,4)],['''',AA.HFR_PATHS.gui_dir,'GridFiles/map_',sgrid,'.mat'''],'lambert','patch',[0.8 0.8 0.8])
+            plotBasemap([AA.HFR_MAPS(mapval).limits(1,1) AA.HFR_MAPS(mapval).limits(1,2)],[AA.HFR_MAPS(mapval).limits(1,3) AA.HFR_MAPS(mapval).limits(1,4)],['''',AA.HFR_PATHS.gui_dir,'GridFiles/map_',sgrid,'.mat'''],'lambert','patch',[0.8 0.8 0.8])
         catch
-            plotBasemap([AA.HFR_GRIDS(gridval).limits(1,1) AA.HFR_GRIDS(gridval).limits(1,2)],[AA.HFR_GRIDS(gridval).limits(1,3) AA.HFR_GRIDS(gridval).limits(1,4)],[AA.HFR_PATHS.gui_dir,'GridFiles/map_',sgrid,'.mat'],'lambert','patch',[0.8 0.8 0.8])
+            plotBasemap([AA.HFR_MAPS(mapval).limits(1,1) AA.HFR_MAPS(mapval).limits(1,2)],[AA.HFR_MAPS(mapval).limits(1,3) AA.HFR_MAPS(mapval).limits(1,4)],[AA.HFR_PATHS.gui_dir,'GridFiles/map_',sgrid,'.mat'],'lambert','patch',[0.8 0.8 0.8])
         end
         %plotBasemap([xmin-padx xmax+padx],[ymin-pady ymax+pady],['''',AA.HFR_PATHS.gui_dir,'GridFiles/map_',sgrid,'.mat'''],'lambert','patch',[0.8 0.8 0.8])
         hold on
@@ -945,7 +985,11 @@ clearbutton_Callback;
                 RADIAL = tmp0;
                 epre = input('What prefix? (Limit to 4 characters, e.g. RDLe) ','s');
                 disp(['Saving to ',AA.HFR_PATHS.gui_dir,'RadialEdits/',sname,'/',epre,shortname(5:end)])
-                eval(['save ''',AA.HFR_PATHS.gui_dir,'RadialEdits/',sname,'/',epre,shortname(5:end), ''' RADIAL ei']);
+                try
+                  eval(['save ''',AA.HFR_PATHS.gui_dir,'RadialEdits/',sname,'/',epre,shortname(5:end), ''' RADIAL ei']);
+                catch
+                  eval(['save ',AA.HFR_PATHS.gui_dir,'RadialEdits/',sname,'/',epre,shortname(5:end), ' RADIAL ei']);                    
+                end
             end
         end
     end
@@ -966,12 +1010,20 @@ clearbutton_Callback;
         % Assumes default processing settings for totals.
         
         cdir = pwd;
-        %eval(['cd ''',AA.HFR_PATHS.gui_dir,'TestTotals/',char(AA.HFR_GRIDS(gridval).name),'''']);
-        eval(['cd ''',AA.HFR_PATHS.total_dir,'''']);
+        %eval(['cd ''',AA.HFR_PATHS.gui_dir,'TestTotals/',char(AA.HFR_MAPS(mapval).name),'''']);
+        try
+          eval(['cd ''',AA.HFR_PATHS.total_dir,'''']);
+        catch
+          eval(['cd ',AA.HFR_PATHS.total_dir]);
+        end
         [newtotal,newtotalpath] = uigetfile('*.*','Choose a data file');
         myfilename = [newtotalpath,newtotal];
         newTUV = load(myfilename);
-        eval(['cd ''',cdir,''''])
+        try
+          eval(['cd ''',cdir,''''])
+        catch
+          eval(['cd ',cdir])
+        end
         
         % reset the date in case a file of different date was chosen
         dtmp = datestr(newTUV.TUV.TimeStamp,'yyyy_mm_dd_HHMM');
@@ -1033,7 +1085,7 @@ clearbutton_Callback;
         
         
         
-        imap = find(T.LonLat(:,1)>AA.HFR_GRIDS(gridval).limits(1,1) & T.LonLat(:,1)<AA.HFR_GRIDS(gridval).limits(1,2) & T.LonLat(:,2)>AA.HFR_GRIDS(gridval).limits(1,3) & T.LonLat(:,2)<AA.HFR_GRIDS(gridval).limits(1,4));
+        imap = find(T.LonLat(:,1)>AA.HFR_MAPS(mapval).limits(1,1) & T.LonLat(:,1)<AA.HFR_MAPS(mapval).limits(1,2) & T.LonLat(:,2)>AA.HFR_MAPS(mapval).limits(1,3) & T.LonLat(:,2)<AA.HFR_MAPS(mapval).limits(1,4));
         [spd,direc] = uv2spdir(T.U(imap),T.V(imap));
         [~,isort] = sort(spd);
         scs = zeros(length(spd),1) + sc;
@@ -1073,7 +1125,6 @@ clearbutton_Callback;
         end
         title([titlelab{pcount},' '],'interpreter','none','Color','k','FontSize',12);
         
-        if 0
             %spawn a different figure to select total vector of interest
             figure(20)
             HTI = quiver(T.LonLat(:,1), T.LonLat(:,2), T.U(:).*scq,T.V(:).*scq,0);
@@ -1084,17 +1135,9 @@ clearbutton_Callback;
             
             [~] = input('Zoom in and press enter to select total.');
             [gx,gy] = ginput(1);
-            %if AA.HFR_GRIDS(gridval).spacing == 2;
-            %   search_radius = 2.5;
-            %elseif AA.HFR_GRIDS(gridval).spacing == 6;
-            %   search_radius = 10;
-            %else
             search_radius = inputdlg('Enter Search Radius (km) : ','');
             search_radius = str2double(char(search_radius));
-            %end
-            
-            %grid = [AA.HFR_GRIDS(gridval).lonlat(:,1) AA.HFR_GRIDS(gridval).lonlat(:,2)];
-            
+                        
             temp_threshold = 0.5/24; %time window in fraction of day,i.e. how many hourly radial maps are included in total
             MINRadials = 3;
             MINSites = 2;
@@ -1122,7 +1165,7 @@ clearbutton_Callback;
                     'CreationInfo','Teresa Updyke - ODU', ...
                     'DomainName','','MinNumSites',MINSites,'MinNumRads',MINRadials,'graphics',1,'gridind',mind);
             end
-        end % if 0
+        
     end
 
     function createplotlistbutton_Callback(~,~)
@@ -1383,12 +1426,12 @@ clearbutton_Callback;
     function threddsbutton_Callback(~,~)
         %Retrieve and plot THREDDS totals
         
-        %%[LON,LAT,U,V,Uerr,Verr,NRAD]= get_thredds_data(dnum,gridval);
-        [TIME,LON,LAT,U,V,Uerr,Verr,NRAD]= get_rutgers_thredds_data_nc([dnum,dnum],[AA.HFR_GRIDS(gridval).limits(1,1) AA.HFR_GRIDS(gridval).limits(1,2)],[AA.HFR_GRIDS(gridval).limits(1,3) AA.HFR_GRIDS(gridval).limits(1,4)]);
-        %[TIME,LON,LAT,U,V,Uerr,Verr]= get_nn_thredds_data_nc([dnum,dnum],[AA.HFR_GRIDS(gridval).limits(1,1) AA.HFR_GRIDS(gridval).limits(1,2)],[AA.HFR_GRIDS(gridval).limits(1,3) AA.HFR_GRIDS(gridval).limits(1,4)]);
-        %[TIME,LON,LAT,U,V,Uerr,Verr]= get_ndbc_thredds_data_nc([dnum,dnum],[AA.HFR_GRIDS(gridval).limits(1,1) AA.HFR_GRIDS(gridval).limits(1,2)],[AA.HFR_GRIDS(gridval).limits(1,3) AA.HFR_GRIDS(gridval).limits(1,4)]);
+        %%[LON,LAT,U,V,Uerr,Verr,NRAD]= get_thredds_data(dnum,mapval);
+        [TIME,LON,LAT,U,V,Uerr,Verr,NRAD]= get_rutgers_thredds_data_nc([dnum,dnum],[AA.HFR_MAPS(mapval).limits(1,1) AA.HFR_MAPS(mapval).limits(1,2)],[AA.HFR_MAPS(mapval).limits(1,3) AA.HFR_MAPS(mapval).limits(1,4)]);
+        %[TIME,LON,LAT,U,V,Uerr,Verr]= get_nn_thredds_data_nc([dnum,dnum],[AA.HFR_MAPS(mapval).limits(1,1) AA.HFR_MAPS(mapval).limits(1,2)],[AA.HFR_MAPS(mapval).limits(1,3) AA.HFR_MAPS(mapval).limits(1,4)]);
+        %[TIME,LON,LAT,U,V,Uerr,Verr]= get_ndbc_thredds_data_nc([dnum,dnum],[AA.HFR_MAPS(mapval).limits(1,1) AA.HFR_MAPS(mapval).limits(1,2)],[AA.HFR_MAPS(mapval).limits(1,3) AA.HFR_MAPS(mapval).limits(1,4)]);
         
-        notnan = find(~isnan(U+V));
+        notnan = find(~isnan(U+V));c
         LON = LON(notnan);  LAT = LAT(notnan); U = U(notnan); V= V(notnan); Uerr = Uerr(notnan); Verr = Verr(notnan);
         %NRAD = NRAD(notnan);
         if strcmp(get(ttool,'State'),'on')
@@ -1494,7 +1537,7 @@ clearbutton_Callback;
 
     function rangeringbutton_Callback(~,~)
         % Plots range ring on the map.
-        rgnum = inputdlg('Enter range value (km).','Plot Range Ring',1,{num2str(AA.HFR_GRIDS(gridval).spacing)},'on');
+        rgnum = inputdlg('Enter range value (km).','Plot Range Ring',1,{num2str(AA.HFR_MAPS(mapval).spacing)},'on');
         rgnum = str2double(char(rgnum));
         [lonnum, latnum] = ginput(1);
         [slon,slat]=m_xy2ll(lonnum,latnum);
@@ -1503,13 +1546,13 @@ clearbutton_Callback;
 
     function savescalebutton_Callback(~,~)
         
-        ngrids = size(AA.HFR_GRIDS,2);
-        AA.HFR_GRIDS(gridval).scalefactor = scq;
-        HFR_GRIDS = AA.HFR_GRIDS(1:ngrids-1);
+        ngrids = size(AA.HFR_MAPS,2);
+        AA.HFR_MAPS(mapval).scalefactor = scq;
+        HFR_MAPS = AA.HFR_MAPS(1:ngrids-1);
         HFR_STNS = AA.HFR_STNS;
         HFR_PATHS = AA.HFR_PATHS;
         
-        eval(['save ', setupfile, ' HFR_PATHS HFR_GRIDS HFR_STNS']);
+        eval(['save ', setupfile, ' HFR_PATHS HFR_MAPS HFR_STNS']);
         
     end
 
@@ -1532,18 +1575,18 @@ clearbutton_Callback;
         
         
         %SET THE INITIAL GRID
-        cgnum = size(AA.HFR_GRIDS,2) + 1;
-        AA.HFR_GRIDS(cgnum).name = {'Custom_Zoom'};  % set up a space for user to create custom temporary grid
-        gridval = 1;                          % start with first grid in the information file
-        sgrid = char(AA.HFR_GRIDS(gridval).name);   % start with first grid name in the information file
-        scq = AA.HFR_GRIDS(gridval).scalefactor;
+        cgnum = size(AA.HFR_MAPS,2) + 1;
+        AA.HFR_MAPS(cgnum).name = {'Custom_Zoom'};  % set up a space for user to create custom temporary grid
+        mapval = 1;                          % start with first grid in the information file
+        sgrid = char(AA.HFR_MAPS(mapval).name);   % start with first grid name in the information file
+        scq = AA.HFR_MAPS(mapval).scalefactor;
         sc = 0.1;     % m_vec arrows
         [cxmin, cxmax, cymin, cymax] = deal([],[],[],[]);
         
-        ngrid = size(AA.HFR_GRIDS,2);
+        ngrid = size(AA.HFR_MAPS,2);
         delete(gridhandles);
         for gg = 1:ngrid
-            gridhandles(gg) = uimenu(gdh,'Label',char(AA.HFR_GRIDS(gg).name),'Tag','Grid','Callback',{@grid_Callback});
+            gridhandles(gg) = uimenu(gdh,'Label',char(AA.HFR_MAPS(gg).name),'Tag','Map','Callback',{@map_Callback});
         end
         
         nsite = length(STN_INFO);
@@ -1554,7 +1597,7 @@ clearbutton_Callback;
         
     end
 
-    function customgrid_Callback(~,~)
+    function custommap_Callback(~,~)
         % Ask how to proceed, either use map or enter manually.
         gc = inputdlg('Enter 1 to define limits by clicking on current map or 2 to type in values. ');
         gc = str2num(cell2mat(gc));
@@ -1562,6 +1605,8 @@ clearbutton_Callback;
         if exist(['',AA.HFR_PATHS.gui_dir,'GridFiles/map_Custom_Zoom.mat'],'file')==2
             try  % because this won't work with PC
                 eval(['!rm ','''',AA.HFR_PATHS.gui_dir,'GridFiles/map_Custom_Zoom.mat'''])
+            catch
+                eval(['!rm ',AA.HFR_PATHS.gui_dir,'GridFiles/map_Custom_Zoom.mat']) 
             end
         end
         
@@ -1570,23 +1615,23 @@ clearbutton_Callback;
             temp=ginput(2);
             [cxmin, cymin] = m_xy2ll(temp(1,1),temp(1,2));
             [cxmax, cymax] = m_xy2ll(temp(2,1),temp(2,2));
-            AA.HFR_GRIDS(cgnum).spacing = 0;% input('Enter grid spacing (km): ');
-            AA.HFR_GRIDS(cgnum).name = 'Custom_Zoom';
-            AA.HFR_GRIDS(cgnum).version = 'Custom_Zoom';
-            AA.HFR_GRIDS(cgnum).lonlat = [cxmin, cymin; cxmax, cymax];
-            AA.HFR_GRIDS(cgnum).limits = [cxmin, cxmax, cymin, cymax];
-            AA.HFR_GRIDS(cgnum).scalefactor = 0.003;
+            %AA.HFR_MAPS(cgnum).spacing = 0;% input('Enter grid spacing (km): ');
+            AA.HFR_MAPS(cgnum).name = 'Custom_Zoom';
+            AA.HFR_MAPS(cgnum).version = 'Custom_Zoom';
+            %AA.HFR_MAPS(cgnum).lonlat = [cxmin, cymin; cxmax, cymax];
+            AA.HFR_MAPS(cgnum).limits = [cxmin, cxmax, cymin, cymax];
+            AA.HFR_MAPS(cgnum).scalefactor = 0.003;
             clearbutton_Callback;
         else
             cxmin=input('Enter minimum longitude. ');
             cxmax=input('Enter maximum longitude. ');
             cymin=input('Enter minimum latitude. ');
             cymax=input('Enter maximum latitude. ');
-            AA.HFR_GRIDS(cgnum).spacing = 0;%input('Enter grid spacing (km): ');
-            AA.HFR_GRIDS(cgnum).name = 'Custom_Zoom';
-            AA.HFR_GRIDS(cgnum).description = 'Custom_Zoom';
-            AA.HFR_GRIDS(cgnum).limits = [cxmin, cxmax, cymin, cymax];
-            AA.HFR_GRIDS(cgnum).scalefactor = 0.003;
+            AA.HFR_MAPS(cgnum).spacing = 0;%input('Enter grid spacing (km): ');
+            AA.HFR_MAPS(cgnum).name = 'Custom_Zoom';
+            AA.HFR_MAPS(cgnum).description = 'Custom_Zoom';
+            AA.HFR_MAPS(cgnum).limits = [cxmin, cxmax, cymin, cymax];
+            AA.HFR_MAPS(cgnum).scalefactor = 0.003;
             clearbutton_Callback;
         end
     end
@@ -1635,7 +1680,7 @@ clearbutton_Callback;
                 R2 = loadRDLFile(myfilename,1);
             end
             
-            radial_differences(R1,R2,gridval,AA);
+            radial_differences(R1,R2,mapval,AA);
             
             
             
@@ -1643,7 +1688,11 @@ clearbutton_Callback;
         else
             
             cdir = pwd;
-            eval(['cd ''',AA.HFR_PATHS.gui_dir,'RadialEdits/',sname,'''']);
+            try
+              eval(['cd ''',AA.HFR_PATHS.gui_dir,'RadialEdits/',sname,'''']);
+            catch
+              eval(['cd ',AA.HFR_PATHS.gui_dir,'RadialEdits/',sname])
+            end
             [R1file,R1filepath] = uigetfile('*.*','Choose a data file');
             R1filename = [R1filepath,R1file];
             
@@ -1659,9 +1708,17 @@ clearbutton_Callback;
             else
                 R1 = loadRDLFile(R1filename,1);
             end
-            eval(['cd ''',cdir,''''])
+            try
+              eval(['cd ''',cdir,''''])
+            catch
+              eval(['cd ',cdir])
+            end
             
-            eval(['cd ''',AA.HFR_PATHS.gui_dir,'RadialEdits/',sname,'''']);
+            try
+              eval(['cd ''',AA.HFR_PATHS.gui_dir,'RadialEdits/',sname,'''']);
+            catch
+              eval(['cd ',AA.HFR_PATHS.gui_dir,'RadialEdits/',sname]);
+            end
             [R2file,R2filepath] = uigetfile('*.*','Choose a second data file');
             R2filename = [R2filepath,R2file];
             
@@ -1677,11 +1734,15 @@ clearbutton_Callback;
             else
                 R2 = loadRDLFile(R2filename,1);
             end
-            eval(['cd ''',cdir,''''])
+            try
+              eval(['cd ''',cdir,''''])
+            catch
+              eval(['cd ',cdir])
+            end
             
         end
         
-        radial_differences(R1,R2,gridval,AA);
+        radial_differences(R1,R2,mapval,AA);
         
     end
 

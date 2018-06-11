@@ -1,0 +1,5 @@
+/Volumes/codaradm/data/radials/ASSA/2018_04/RDLm_ASSA_2013_01_01_0000.ruv
+/Volumes/codaradm/data/radials/CEDR/2018_04/RDLm_CEDR_2013_01_01_0000.ruv
+/Volumes/codaradm/data/radials/LISL/2018_04/RDLm_LISL_2013_01_01_0000.ruv
+/Volumes/codaradm/data/radials/DUCK/2018_04/RDLi_DUCK_2013_01_01_0000.ruv
+/Volumes/codaradm/data/radials/HATY/2018_04/RDLi_HATY_2013_01_01_0000.ruv
