@@ -790,9 +790,9 @@ set(mgf,'Visible','on');
             for xx = 1:size(HFR_MAPS,2)
                 fprintf('Constructing map %s ...\n', char(HFR_MAPS(xx).name))
                 try
-                    makeCoast([HFR_MAPS(xx).limits(1) HFR_MAPS(xx).limits(2)],[HFR_MAPS(xx).limits(3) HFR_MAPS(xx).limits(4)],'lambert',['''',HFR_PATHS.gui_dir,'GridFiles/map_',char(HFR_GRIDS(xx).name),'.mat'''],4);
+                    makeCoast([HFR_MAPS(xx).limits(1) HFR_MAPS(xx).limits(2)],[HFR_MAPS(xx).limits(3) HFR_MAPS(xx).limits(4)],'lambert',['''',HFR_PATHS.gui_dir,'GridFiles/map_',char(HFR_MAPS(xx).name),'.mat'''],4);
                 catch
-                    makeCoast([HFR_MAPS(xx).limits(1) HFR_MAPS(xx).limits(2)],[HFR_MAPS(xx).limits(3) HFR_MAPS(xx).limits(4)],'lambert',[HFR_PATHS.gui_dir,'GridFiles/map_',char(HFR_GRIDS(xx).name),'.mat'],4);
+                    makeCoast([HFR_MAPS(xx).limits(1) HFR_MAPS(xx).limits(2)],[HFR_MAPS(xx).limits(3) HFR_MAPS(xx).limits(4)],'lambert',[HFR_PATHS.gui_dir,'GridFiles/map_',char(HFR_MAPS(xx).name),'.mat'],4);
                 end
                 
             end
