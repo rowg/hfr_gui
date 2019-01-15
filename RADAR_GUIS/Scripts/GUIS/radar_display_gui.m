@@ -636,13 +636,13 @@ clearbutton_Callback;
                 %USE QUIVER ARROWS
                 
                 % do not display flagged values unless requested
-                if  strcmp(get(tottool,'State'),'off')
-                    if strcmp(get(flagtool,'State'),'on')
-                    else
-                        DATA.U(DATA.Flag == 128) = NaN;
-                        DATA.V(DATA.Flag == 128) = NaN;
-                    end
-                end
+%                 if  strcmp(get(tottool,'State'),'off')
+%                     if strcmp(get(flagtool,'State'),'on')
+%                     else
+%                         DATA.U(DATA.Flag == 128) = NaN;
+%                         DATA.V(DATA.Flag == 128) = NaN;
+%                     end
+%                 end
                 if strcmp(get(qtool,'State'),'on')
                     %do not plot vectors outside the map/zoom area
                     imap = find(DATA.LonLat(:,1)>AA.HFR_MAPS(mapval).limits(1,1) & DATA.LonLat(:,1)<AA.HFR_MAPS(mapval).limits(1,2) & DATA.LonLat(:,2)>AA.HFR_MAPS(mapval).limits(1,3) & DATA.LonLat(:,2)<AA.HFR_MAPS(mapval).limits(1,4));
@@ -714,13 +714,13 @@ clearbutton_Callback;
                     %USE MVEC ARROWS
                 else
                     % do not display flagged values unless requested
-                    if strcmp(get(tottool,'State'),'off')
-                        if strcmp(get(flagtool,'State'),'on')
-                        else
-                            DATA.U(DATA.Flag == 128) = NaN;
-                            DATA.V(DATA.Flag == 128) = NaN;
-                        end
-                    end
+%                     if strcmp(get(tottool,'State'),'off')
+%                         if strcmp(get(flagtool,'State'),'on')
+%                         else
+%                             DATA.U(DATA.Flag == 128) = NaN;
+%                             DATA.V(DATA.Flag == 128) = NaN;
+%                         end
+%                     end
                     % make all vectors the same size
                     clear tspd tdir Usc Vsc
                     %do not plot vectors outside the map area
