@@ -27,39 +27,48 @@ function [longOUT,latOUT,phiVecOUT,thetaVecOUT]=mc_coords(optn,longIN,latIN,phiV
 % R. Pawlowicz 9/01 - Vectorized, changed functionality, put into standard M_MAP form.
 %
 % 29/Sep/2005 - fixed bug (apparently no-one ever used this option before now!)
-
+%
+% 1 Nov 2012 - added IGRF2011 coords (thanks to Joe Kinrade)
 
 global MAP_PROJECTION MAP_COORDS
 
 pi180=pi/180;
 
 
-switch optn,
+switch optn
   case 'name'
 
-    longOUT.name={'geographic','IGRF2000-geomagnetic'};
+    longOUT.name={'geographic','IGRF2000-geomagnetic','IGRF2011-geomagnetic'};
     return;
     
-  case 'parameters',
-    switch longIN,
-      case 'geographic',
-        longOUT.name='geographic';
-        longOUT.lambda = 0;
-	longOUT.phi = 0;
-	
-      case 'IGRF2000-geomagnetic',
-        g10=-29615;
-        g11=-1728;
-        h11=5186;
-	longOUT.name='IGRF2000-geomagnetic';
-        longOUT.lambda=  atan(h11/g11);
-        longOUT.phi   =  atan((g11*cos(longOUT.lambda)+h11*sin(longOUT.lambda))/g10);
-      
+  case 'parameters'
+    switch longIN
+        case 'geographic'
+            longOUT.name='geographic';
+            longOUT.lambda = 0;
+            longOUT.phi = 0;
+        
+        case 'IGRF2000-geomagnetic'
+            g10=-29615;
+            g11=-1728;
+            h11=5186;
+            longOUT.name='IGRF2000-geomagnetic';
+            longOUT.lambda=  atan(h11/g11);         
+            longOUT.phi   =  atan((g11*cos(longOUT.lambda)+h11*sin(longOUT.lambda))/g10);
+
+        case 'IGRF2011-geomagnetic' %ADDED 2012-11-02 Joe Kinrade, Uni. of Bath
+            g10=-29496.5; %1st order IGFR2011 coefficient
+            g11=-1585.9;  %2nd order
+            h11=4945.1;   %3rd order
+            longOUT.name='IGRF2011-geomagnetic';
+            longOUT.lambda=  atan(h11/g11);         
+            longOUT.phi   =  atan((g11*cos(longOUT.lambda)+h11*sin(longOUT.lambda))/g10);
+
       otherwise	
         error('Unrecognized coordinate system');
-    end;
+    end
     return;
-  case 'geo2mag',
+  case 'geo2mag'
   
      % Rotation matrices
      lambda=MAP_PROJECTION.coordsystem.lambda;
@@ -73,7 +82,7 @@ switch optn,
           sin(phi)  0   cos(phi) ]; 
      T=Ty*Tz;
 
-  case 'mag2geo',
+  case 'mag2geo'
       % Rotation matrices
      lambda=MAP_COORDS.lambda;
      phi=MAP_COORDS.phi;
@@ -87,7 +96,7 @@ switch optn,
      T=Tz*Ty;
      
   
-end;
+end
   
 [n,m]=size(latIN);
 
@@ -110,7 +119,7 @@ xp=tmp(1,:);yp=tmp(2,:);zp=tmp(3,:);
 latOUT=acos(zp./sqrt(xp.^2+yp.^2+zp.^2));
 longOUT=atan2(yp,xp);
 	
-if nargin > 3,
+if nargin > 3
 	% Sign change due to sign convention used here.
 	thetaVecIN=-thetaVecIN(:)';
         phiVecIN=phiVecIN(:)';
@@ -140,7 +149,7 @@ if nargin > 3,
 	% Sign change due to sign convention used here.
 	thetaVecOUT=-reshape(thetaVecOUT,n,m);
         phiVecOUT  = reshape(phiVecOUT,n,m);
-end;
+end
 
 
 % Radians to degrees.
